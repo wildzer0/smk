@@ -49,7 +49,7 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 | M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. M0.5 e M0.9 chiusi (G0 non superato). Dump verificato (M0.10 chiuso). Pronto: M0.4 (pinout connettore). M0.3 (acquisto Nano) ora **obbligatorio** prima del primo flash |
 | M0 | **chiusa a metà** | Restano M0.3, M0.4, M0.6, M0.7: si chiudono all'arrivo del Nano |
 | M1 | **in corso** | M1.7 chiuso (258a:010c, EP1 8 B + EP2 16 B IN, nessun EP OUT, feature ID6 da 519 B). M1.6 (analisi del firmware stock, Claude): prima passata fatta, vedi [yunzii-b68-firmware-stock.md](keyboards/yunzii-b68-firmware-stock.md); restano matrice, keymap, radio, LED. M1.2–M1.5 attendono M0.4 |
-| M2 | **in corso** | M2.1 pronto. Il lavoro senza hardware (M2.1, poi M4.7/M4.13–M4.17 nel simulatore) procede; i pin reali e il flash aspettano M0.4/M1.2 e il Nano |
+| M2 | **in corso** | M2.1 pronto (unisce ex M2.2), M2.3 in bozza (unisce ex M2.4). Il lavoro senza hardware (M2.1, poi M4.7/M4.13–M4.17 nel simulatore) procede; i pin reali e il flash aspettano M0.4/M1.2 e il Nano |
 | M3–M8 | non iniziate | |
 
 Registro delle decisioni/rilievi emersi durante i task:
@@ -291,9 +291,9 @@ Stime di effort per task: **S** ≤ 2 h · **M** ≤ 1 giorno · **L** più gior
 | ID | Task | Verifica | Dip. | Eff. |
 | --- | --- | --- | --- | --- |
 | M2.1 | Scaffold `src/keyboards/yunzii-b68/` da [`example/`](../src/keyboards/example) + registrazione `keyboards += {…}` (`platform:'sh68f90'`, `icp_part:'sh68f90a'`) | `meson setup` ok; target `yunzii-b68_default_smk.hex` compila (anche con stub) | M0.1 | M |
-| M2.2 | `kbdef.h`: `MATRIX_ROWS/COLS`, macro pin riga/colonna, stringhe USB | compila; `_Static_assert` coerenti | M1.2 | M |
+| ~~M2.2~~ | (unita a M2.1) `kbdef.h`: `MATRIX_ROWS/COLS`, macro pin riga/colonna, stringhe USB | compila; `_Static_assert` coerenti | M1.2 | M |
 | M2.3 | `user_init.c`: direzione/pull-up/drive dei pin (solo ciò che serve alla matrice per ora); WDT | compila; nessun pin LED/radio in stato indefinito | M2.2 | M |
-| M2.4 | `user_matrix.c`: 7 hook (`cols_deselect_all`, `col_select/deselect`, `read_rows`, `scan_pre/post`, `sinks_off`) | log di debug (`smk-console`) mostra ogni tasto alla posizione corretta; verifica "ghosting" e tempi di assestamento | M2.3 | L |
+| ~~M2.4~~ | (unita a M2.3) `user_matrix.c`: 7 hook (`cols_deselect_all`, `col_select/deselect`, `read_rows`, `scan_pre/post`, `sinks_off`) | log di debug (`smk-console`) mostra ogni tasto alla posizione corretta; verifica "ghosting" e tempi di assestamento | M2.3 | L |
 | M2.5 | `layouts/default/layout.c`: macro `LAYOUT_xx` + layer base + Fn (media, F-row) | tutti i tasti producono il keycode atteso; formato compatibile con `boot_chord_gen.py` | M2.4 | M |
 | M2.6 | `kb.c` minimo: `kb_send_*` → USB; switch se presenti | digitazione OK; Fn funziona; `CapsLock` LED via SET_REPORT | M2.5 | M |
 | M2.9 | **Chord di recupero nell'applicazione**: prima di ogni init pesante (USB, radio, LED) `main()` legge la matrice e, se il chord è premuto, chiama `isp_jump()`. Va riusato lo scan del bootloader (`boot/main.c`, `chord_held`) | con il chord premuto all'accensione la scheda entra in ISP; test anche dopo un reset da watchdog; margine di tempo misurato | M2.4 | M |
