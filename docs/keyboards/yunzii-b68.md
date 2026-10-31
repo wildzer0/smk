@@ -87,6 +87,7 @@ Code option e prova di ripristino: M0.6/M0.7 (ancora da fare).
 * Preset da usare: `--platform sh68f90 --vendor_id 0x258a --product_id 0x010c` (isp_iface_num=1, isp_report_id=5 di
   default, identici a SMK).
 
-**Anomalia dump:** nella rilettura di M0.9 l'MD5 del bootloader coincide con `bootloader.hex` (`3e0ebd0c…`), mentre
-quelli di `full` e `firmware` **no** (`4aea8bec…` vs `35638c0a…`; `6916b48f…` vs `c2e07b89…`). Probabile area dati
-modificata a runtime (il settore 0xD000 non ha nessun byte 0xFF). Da chiarire in M0.10.
+**Anomalia dump — risolta (M0.10):** `dump/r1.bin` e `dump/r2.bin` sono identici (MD5 `4aea8bec8f13356a66a90788be58f179`,
+64 KiB) e coincidono con la rilettura di M0.9. Rispetto al primo `full.hex` differiscono solo 2 byte: `0xC60A`
+(0x11→0x08) e `0xC65A` (0x04→0x01), cioè dati di stato scritti dal firmware stock in una zona a 0xC600.
+Il backup è affidabile. **Dump canonico: `backups/dump/r1.bin`** (binario, 65536 B); gli `.hex` restano come copie.

@@ -28,7 +28,7 @@ un branch/PR. Le schede le scrivo io; tu implementi; io faccio review e tengo ag
 | M0.6 | Prova di ripristino del dump | M0 | Bozza | M |
 | M0.7 | Lettura delle code option | M0 | Bozza | M |
 | [M0.9](M0.9-gate-g0.md) | **Gate G0**: l'ISP funziona senza applicazione? | M0 | **Chiuso: non superato** | M |
-| [M0.10](M0.10-riletture-dump.md) | Riletture del dump e confronto | M0 | **Pronto** | S |
+| [M0.10](M0.10-riletture-dump.md) | Riletture del dump e confronto | M0 | **Chiuso** | S |
 
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
