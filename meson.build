@@ -382,7 +382,7 @@ foreach keyboard, board : keyboards
         if options.has_key('vial_json')
             src_main += src_via
             src_main += configure_file(
-                output : '@0@_vial_data.c'.format(keyboard),
+                output : '@0@_@1@_vial_data.c'.format(keyboard, layout),
                 input : board['dir'] / options['vial_json'],
                 command : [py, vial_gen, '@INPUT@', options['vial_uid'], options['vial_unlock']],
                 capture : true,

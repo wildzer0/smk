@@ -395,6 +395,9 @@ class KeyMatrix:
     # column -> (port SFR, bit); boards with another column wiring subclass this
     COL_PIN = COL_PIN
 
+    # P7 pins held low by something other than a key (an encoder contact, say), as a bit mask
+    p7_forced_low = 0
+
     def __init__(self):
         self.pressed = set()
         self.usb_mode = True
@@ -429,7 +432,7 @@ class KeyMatrix:
         for r in (0, 1, 2):
             if r in low_rows:
                 p7 &= ~(1 << ROW_PIN[r][1])
-        sess.set_pin(P7, p7)
+        sess.set_pin(P7, p7 & ~self.p7_forced_low & 0xFF)
         # P5 pin level: rows R3-R4 = bits 3-4; bit5 = CONN_MODE (1=USB, 0=RF)
         p5 = 0xFF
         if not self.usb_mode:

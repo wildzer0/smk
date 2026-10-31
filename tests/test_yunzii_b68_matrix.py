@@ -155,6 +155,30 @@ class TestB68ProbeLayout(unittest.TestCase):
     def test_single_digit_column(self):
         self.assertEqual(self.typed(3, 2), [KEY_C, KEY_DIGIT[0], KEY_DIGIT[3], KEY_R, KEY_DIGIT[2], KEY_SPACE])
 
+    def test_input_watch_types_a_pin_that_changes(self):
+        if not PROBE_FIRMWARE:
+            self.skipTest("yunzii-b68_probe_smk.hex not built")
+        kb = Air60Sim(firmware=PROBE_FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            read_rows = kb._a("user_matrix_read_rows")
+            kb.brk(read_rows)
+            for _ in range(100):  # let the watch take its first reading
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.matrix.p7_forced_low = 0x01  # P7.0 goes low
+            for _ in range(200):
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.cmd("delete")
+            typed = [r[2] for r in kb.ep1_reports() if r[2]]
+        finally:
+            kb.close()
+        KEY_P, KEY_EQUAL = 0x13, 0x2E
+        self.assertEqual(typed, [KEY_P, KEY_DIGIT[7], KEY_DIGIT[0], KEY_EQUAL, KEY_DIGIT[0], KEY_SPACE])  # "p70=0 "
+
     def test_two_digit_column(self):
         self.assertEqual(self.typed(12, 4), [KEY_C, KEY_DIGIT[1], KEY_DIGIT[2], KEY_R, KEY_DIGIT[4], KEY_SPACE])
 
@@ -190,7 +214,9 @@ class TestB68DefaultLayout(unittest.TestCase):
         self.assertEqual(self.keys((1, 1))[2], 0x14)  # c1r1 = Q
 
     def test_right_column(self):
-        self.assertEqual(self.keys((15, 0))[2], 0x4C)  # c15r0 = Delete
+        self.assertEqual(self.keys((15, 1))[2], 0x4C)  # c15r1 = Delete
+        self.assertEqual(self.keys((15, 2))[2], 0x4B)  # c15r2 = Page Up
+        self.assertEqual(self.keys((15, 3))[2], 0x4E)  # c15r3 = Page Down
 
     def test_shifted_key(self):
         report = self.keys((0, 3), (1, 3))  # left Shift + Z

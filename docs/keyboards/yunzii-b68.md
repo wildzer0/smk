@@ -98,10 +98,12 @@ l'ipotesi ricavata dal firmware stock**: 16 colonne × 5 righe, tutti i tasti ri
 | 3 | 0–10, 13, 14, 15 | Shift Z X C V B N M , . / · Shift · Su · c15 |
 | 4 | 0, 1, 2, 5, 8, 9, 13, 14, 15 | Ctrl Win Alt · Spazio · Alt Fn · Sx Giù Dx |
 
-Sono **67 celle** riportate, la tastiera ha 68 tasti: ne manca una nella riga 4, tra Fn e le frecce (cella ipotizzata `c10r4`,
-assunta Ctrl destro nel layout). Il layout `default` e `vial.json` usano le larghezze di una 65% ANSI; la colonna destra
-(`c15`) è assunta come Del, PgUp, PgDn, End (da confermare sulla tastiera). Il chord di recupero è Esc + 1 + 2
-(celle `c0r0`, `c1r0`, `c2r0`); lo sblocco Vial è Esc + Invio.
+Sono **67 celle**: 66 tasti più la **pressione dell'encoder rotativo** (`c15r0`). Non manca nessun tasto (la riga 4 ha 9
+celle). Il layout `default` e `vial.json` usano le larghezze di una 65% ANSI; sotto l'encoder, `c15r1..r3` sono assunti
+Del, PgUp, PgDn (da confermare). La **rotazione** dell'encoder non fa parte della matrice: i suoi contatti vanno trovati
+(layout `probe`, righe `pNN=L` e `iNN`). Il chord di recupero è Esc + 1 + 2 (celle `c0r0`, `c1r0`, `c2r0`) e **è stato
+verificato sul chip reale**: la tastiera compare come `0603:1020` ("Gaming KB", report 5 e 6 del bootloader stock). Lo
+sblocco Vial è Esc + Invio.
 
 ## Hardware (M0.4)
 

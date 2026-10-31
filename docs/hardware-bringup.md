@@ -83,3 +83,10 @@ pin delle colonne o delle righe differiscono dall'ipotesi.
 * **Prossimo** (senza Nano): riflash via ISP **dal firmware SMK** (VID:PID `258a:dead`) con il layout `default`:
   `.\sinowisp.exe write --platform sh68f90 --vendor_id 0x258a --product_id 0xdead --format ihex -f yunzii-b68_default_smk.hex`.
   Prova anche che l'ingresso in ISP dall'applicazione SMK funziona sul chip reale.
+
+* **Fatto (2026-10-31):** riflash da SMK a SMK via ISP riuscito; il chord Esc+1+2 porta la tastiera in ISP (compare come
+  `0603:1020`); `sinowisp` rileva da solo il dispositivo già in ISP ("Device not found. Trying ISP device...") e si usano gli
+  stessi comandi con gli stessi VID:PID dell'applicazione.
+* **Trovato:** la tastiera ha 66 tasti + encoder rotativo (pressione = `c15r0`). Il layout è stato corretto di conseguenza.
+* **Prossimo (hardware):** flashare il layout `probe` aggiornato e girare l'encoder lentamente: ora scrive anche `p70=0` ecc. quando un ingresso
+  non di matrice cambia, e `iNN` per i contatti a massa fissa.
