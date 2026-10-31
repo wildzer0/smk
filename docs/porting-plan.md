@@ -55,6 +55,7 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 Registro delle decisioni/rilievi emersi durante i task:
 
 * M0.9: **G0 non superato**: l'ISP stock si raggiunge solo tramite l'applicazione (258a:010c, iface 1, report 5). Nano/ICP obbligatorio prima del primo flash (R11). 
+* M4.17 (parte 1): nuovo `src/smk/layer.c` (MO/TO/TG/DF/OSL/OSM, 8 layer, cache del keycode per posizione) con `keymap.c` come unico accesso alla keymap. Costo sulla Air60: +167 B XRAM, +1 KB flash. Test host `tests/test_layer_host.py` (46 controlli, provato con una mutazione) e suite sim invariata. Cambio di comportamento: al rilascio di `MO` non si chiama più `clear_keys()`, perché il rilascio usa il keycode della pressione.
 * M2.9: chord di recupero implementato in `src/smk/recovery.c` (si abilita per scheda con `RECOVERY_CHORD_KEYS` in `kbdef.h`; costo 677−661=16 B XRAM e ~200 B di flash sulla B68, nullo sulle altre). Sulla B68 le celle sono provvisorie (0,0)(1,0)(2,0): **da sostituire con tre tasti reali prima del primo flash** (dipende dalla sonda).
 * M2.3: i GPIO a riposo letti nel simulatore coincidono con la tabella dello stock (16/16 registri). `GPIO_DRIVE_25MA` vale 0, quindi il drive dello stock (0) è lo stesso della Air60.
 * M1.6: dal firmware stock la matrice è 16 strobe (P6.0–7, P5.0/1/2/7, P4.0/2/3/5) × 5 righe (P7.1–3, P5.3/4); P7.0 è un ingresso extra di funzione ignota; la mappa tasto→(col,riga) si ottiene con un **firmware sonda** dopo il primo flash (niente multimetro). L'ingresso ISP dall'app è identico a SMK.

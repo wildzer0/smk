@@ -334,9 +334,11 @@ matrix_scan_full()  (ISR Timer2)
 matrix_task()  (main loop)           ← diff con matrix_previous; sleep_note_activity()
         ▼
 process_key_state(row,col,pressed)
-   base = keymaps[default_layer][row][col]
-   ├─ se base è MO(n)  → action_layer = n  (rilascio: clear_keys(); action_layer = 0)   [return]
-   ├─ qcode = overlay del layer attivo, oppure base se KC_TRANSPARENT
+   qcode = layer_key_down(row,col)   (pressione: cerca nei layer attivi, dal più alto; KC_TRANSPARENT scende;
+                                      l'ultimo è il default layer; il risultato viene ricordato per posizione)
+         | layer_key_up(row,col)     (rilascio: restituisce il keycode ricordato alla pressione)
+   ├─ layer_process(qcode)           ← MO/TO/TG/DF/OSL/OSM: gestiti qui, [return]
+   ├─ layer_key_pressed()            ← (solo alla pressione) consuma gli one-shot armati
    ├─ kb_process_record(qcode, pressed)          ← hook di scheda (false = consumato)
    ├─ layout_process_record(qcode, pressed)      ← hook di layout (false = consumato)
    ▼
@@ -345,6 +347,7 @@ send_keycode(qcode, pressed)
    ├─ keycode base  → add_key/del_key    + send_keyboard_report()
    ├─ system        → host_system_send()
    └─ consumer      → host_consumer_send()
+   └─ layer_key_released()          ← (solo al rilascio) toglie i modificatori one-shot
         ▼
 report.c: send_6kro_report() / send_nkro_report()   (solo se il report è cambiato — memcmp con l'ultimo)
         ▼
@@ -700,9 +703,10 @@ nuova, ricavati leggendo il codice. Il piano ([porting-plan.md](porting-plan.md)
    EP2=64 B). EP1 è troppo piccolo per 32 B; EP2 oggi ospita extra+NKRO+console con Report ID, che sono
    incompatibili con un'interfaccia senza ID. Serve una **ridistribuzione degli endpoint** (vedi piano, decisione
    D1).
-2. **Il motore dei layer è minimale** (solo `MO`). VIAL permette di assegnare `TO/TG/LT/MT/OSM/…`: o li
-   implementi o limiti la palette di keycode esposta (`vial.json`/lista keycode).
-3. **Possibile stuck-key sul cambio layer**: il rilascio di un tasto risolve il keycode con
+2. ~~Il motore dei layer è minimale~~ **Risolto (M4.17)**: `src/smk/layer.c` gestisce `MO/TO/TG/DF/OSL/OSM`, fino a
+   8 layer. Restano `LT/MT` (serve la timebase al ms, M4.19b) e `LM`/`TT`. Vial può assegnare solo ciò che il
+   motore esegue; gli altri keycode vanno rifiutati o ignorati (M4.19).
+3. ~~**Possibile stuck-key sul cambio layer**~~ **Risolto (M4.17)**: il keycode risolto alla pressione viene ricordato per posizione (`down_keycode`, ROWS×COLS×2 B) e usato al rilascio; `clear_keys()` al rilascio di `MO` non serve più. Descrizione precedente: il rilascio di un tasto risolve il keycode con
    `action_layer` *corrente*; se rilasci `Fn` prima del tasto, il keycode risolto in rilascio è quello base.
    `clear_keys()` al rilascio di `MO` mitiga per i tasti normali; con più layer/`LT`/`MT` serve una cache
    "keycode premuto per posizione".
