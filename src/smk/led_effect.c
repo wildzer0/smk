@@ -8,6 +8,10 @@ uint8_t led_effect_index(led_effect_t fx, uint8_t row, uint8_t col, uint8_t phas
             return (uint8_t)(user_led_axis_x(col) + phase);
         case FX_VERTICAL:
             return (uint8_t)(user_led_axis_y(row) + phase);
+        case FX_DIAGONAL:
+            return (uint8_t)(user_led_axis_x(col) + user_led_axis_y(row) + phase);
+        case FX_BREATHE:
+            return phase;
         case FX_RADIAL:
         default:
             return (uint8_t)(user_led_radial(row, col) + phase);
@@ -41,6 +45,13 @@ bool led_effect_rgb(led_effect_t fx, uint8_t row, uint8_t col, uint8_t phase, ui
     }
     if (fx >= FX_OFF) {
         return false;
+    }
+    if (fx == FX_PULSE) {
+        // a triangle wave of the phase, squared so the dark end lasts
+        const uint8_t tri   = (phase < 128) ? (uint8_t)(phase << 1) : (uint8_t)((uint8_t)(255 - phase) << 1);
+        const uint8_t level = (uint8_t)(((uint16_t)tri * tri) >> 8);
+        out[0] = out[1] = out[2] = (uint8_t)(((uint16_t)level * brightness) >> 8);
+        return true;
     }
     led_color_wheel(led_effect_index(fx, row, col, phase), out);
     out[0] = (uint8_t)(((uint16_t)out[0] * brightness) >> 8);

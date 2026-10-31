@@ -25,6 +25,7 @@
 #define LED_SPEED_DEFAULT      4
 #define LED_SPEED_MIN          1
 #define LED_SPEED_MAX          16
+#define ANIM_FRAMES            9 // frames (about 8 ms each) per animation step
 #define LED_BRIGHTNESS_DEFAULT 160
 #define LED_BRIGHTNESS_STEP    32
 
@@ -49,7 +50,9 @@ _Static_assert(LED_GEOMETRY_ROWS == LED_ROWS && LED_GEOMETRY_COLS == LED_COLS, "
     X(9, PWM03) X(10, PWM04) X(11, PWM05)  /* row 3: P3.3 P3.4 P3.5 (the shift row) */                  \
     X(12, PWM00) X(13, PWM01) X(14, PWM02) /* row 4: P3.0 P3.1 P3.2 (the bottom row) */
 
-static __xdata uint8_t led_fb[LED_COLS][LED_ROWS * 3]; // [column][row * 3 + colour]
+static __xdata uint8_t  led_fb[LED_COLS][LED_ROWS * 3];   // [column][row * 3 + colour]: the 8-bit levels
+static __xdata uint16_t led_duty[LED_COLS][LED_ROWS * 3]; // the DUTY2 value of each, ready for the subframe interrupt to copy
+static __xdata uint8_t  led_lit[LED_COLS];                // how many channels of the column are not dark
 
 static uint8_t led_col;   // the next column to light
 static uint8_t led_phase; // effect animation phase
@@ -141,6 +144,12 @@ void indicators_pwm_disable()
 void indicators_init()
 {
     memset(led_fb, 0, sizeof(led_fb));
+    memset(led_lit, 0, sizeof(led_lit));
+    for (uint8_t col = 0; col < LED_COLS; col++) {
+        for (uint8_t i = 0; i < LED_ROWS * 3; i++) {
+            led_duty[col][i] = (uint16_t)(PWM_DUTY1_BASE + i);
+        }
+    }
 
     PWM0PERDH = PWM_PERIOD_H;
     PWM0PERDL = PWM_PERIOD_L;
@@ -180,20 +189,17 @@ void indicators_post_update()
     PWM00CON &= ~(1 << 5);
 }
 
-// Loads the 15 widths of column `col`; false if the column is entirely dark.
+// Loads the 15 widths of column `col` (computed when the effect was rendered, so this is only copies: it runs in the interrupt);
+// false if the column is entirely dark.
 static bool load_column(uint8_t col)
 {
-    __xdata uint8_t *fb = led_fb[col];
+    __xdata uint16_t *duty = led_duty[col];
 
-    uint8_t any = 0;
-
-#define LOAD_CHANNEL(n, pwm)                                                                                  \
-    SET_PWM_DUTY_2(pwm, (uint16_t)(PWM_DUTY1_BASE + (n) + LED_WIDTH(fb[n])));                                \
-    any = (uint8_t)(any | fb[n]);
+#define LOAD_CHANNEL(n, pwm) SET_PWM_DUTY_2(pwm, duty[n]);
     LED_CHANNELS(LOAD_CHANNEL)
 #undef LOAD_CHANNEL
 
-    return any != 0;
+    return led_lit[col] != 0;
 }
 
 bool indicators_update_step(keyboard_state_t *keyboard, uint8_t current_step)
@@ -219,7 +225,7 @@ bool indicators_update_step(keyboard_state_t *keyboard, uint8_t current_step)
         led_col       = 0;
         frame_wrapped = true;
 
-        if (++anim_ctr >= 4) {
+        if (++anim_ctr >= ANIM_FRAMES) {
             anim_ctr = 0;
         }
         if (anim_ctr == 0 && !(tests & TEST_FREEZE)) {
@@ -244,9 +250,16 @@ static void regen_one(void)
         rgb[0] = rgb[1] = rgb[2] = 255;
     }
 
-    led_fb[regen_col][regen_row * 3 + 0] = rgb[0];
-    led_fb[regen_col][regen_row * 3 + 1] = rgb[1];
-    led_fb[regen_col][regen_row * 3 + 2] = rgb[2];
+    for (uint8_t c = 0; c < 3; c++) {
+        const uint8_t i   = (uint8_t)(regen_row * 3 + c);
+        const uint8_t old = led_fb[regen_col][i];
+
+        if ((old == 0) != (rgb[c] == 0)) {
+            led_lit[regen_col] = (uint8_t)(led_lit[regen_col] + (rgb[c] ? 1 : -1));
+        }
+        led_fb[regen_col][i]   = rgb[c];
+        led_duty[regen_col][i] = (uint16_t)(PWM_DUTY1_BASE + i + LED_WIDTH(rgb[c]));
+    }
 
     if (++regen_col >= LED_COLS) {
         regen_col = 0;
@@ -255,6 +268,11 @@ static void regen_one(void)
         }
     }
 }
+
+// The effect is rendered a few LEDs per pass of the main loop, so a repaint (80 LEDs) never holds up the keys for long
+#define RENDER_CHUNK 8u
+
+static uint8_t render_left; // LEDs still to paint in the repaint in progress
 
 void indicators_render()
 {
@@ -267,12 +285,15 @@ void indicators_render()
         render_dirty = true;
     }
 
-    if (!render_dirty) {
-        return;
+    if (render_left == 0) {
+        if (!render_dirty) {
+            return;
+        }
+        render_dirty = false; // cleared first: a phase step during the repaint asks for another
+        render_left  = (uint8_t)(LED_ROWS * LED_COLS);
     }
-    render_dirty = false; // cleared first: a phase step during the repaint asks for another
 
-    for (uint8_t i = 0; i < (uint8_t)(LED_ROWS * LED_COLS); i++) {
+    for (uint8_t i = 0; i < RENDER_CHUNK && render_left; i++, render_left--) {
         regen_one();
     }
 }

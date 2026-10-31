@@ -7,6 +7,9 @@ typedef enum {
     FX_HORIZONTAL, // wave across columns
     FX_VERTICAL,   // wave across rows
     FX_SOLID,      // static (no animation)
+    FX_DIAGONAL,   // wave across columns and rows together
+    FX_BREATHE,    // the whole board in one colour that cycles
+    FX_PULSE,      // the whole board white, fading in and out
     FX_COUNT
 } led_effect_t;
 
