@@ -67,3 +67,10 @@
 #define KB_C13 P4_2
 #define KB_C14 P4_3
 #define KB_C15 P4_5
+
+// Recovery chord (see src/smk/recovery.h): hold these three cells while plugging in to
+// jump to the ISP bootloader. PROVISIONAL: they are raw (col, row) cells, not known
+// keys. Replace them with three real keys once the probe firmware has mapped the matrix;
+// the three cells must all be held for ~60 ms, so pressing them by chance is unlikely.
+#define RECOVERY_CHORD_COUNT 3
+#define RECOVERY_CHORD_KEYS  { { 0u, 0u }, { 1u, 0u }, { 2u, 0u } }

@@ -392,6 +392,9 @@ class KeyMatrix:
     a pressed key on the currently-scanned column shorts it there. Also presents
     the CONN_MODE switch (P5.5: 1=USB, 0=RF) via `usb_mode`."""
 
+    # column -> (port SFR, bit); boards with another column wiring subclass this
+    COL_PIN = COL_PIN
+
     def __init__(self):
         self.pressed = set()
         self.usb_mode = True
@@ -406,7 +409,7 @@ class KeyMatrix:
         self.pressed.clear()
 
     def _col_driven_low(self, sess, col, port_cache):
-        sfr, bit = COL_PIN[col]
+        sfr, bit = self.COL_PIN[col]
         v = port_cache.get(sfr)
         if v is None:
             v = port_cache[sfr] = sess.get_sfr(sfr) or 0

@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "keyboard.h"
 #include "user_init.h"
+#include "recovery.h"
 #include "indicators.h"
 #include "kb.h"
 #include "settings.h"
@@ -34,6 +35,8 @@ void init(void)
 #endif
 
     user_init();
+
+    recovery_check();
 
     matrix_init();
     keyboard_init();
