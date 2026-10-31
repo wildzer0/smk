@@ -36,6 +36,8 @@ un branch/PR. **Dal 2026-10-31 le implemento io** (codice compreso); a te restan
 
 | M2.9 | Chord di recupero nell'applicazione (celle provvisorie sulla B68) | M2 | **Chiuso** (Claude) | M |
 
+**Sequenza sul banco:** [hardware-bringup.md](../hardware-bringup.md) (cosa fa l'utente con l'hardware, in ordine).
+
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
 ## Modello di scheda

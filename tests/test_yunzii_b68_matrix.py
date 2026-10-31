@@ -112,6 +112,53 @@ class TestB68Matrix(unittest.TestCase):
         self.assertGreater(len(seen), MATRIX_COLS * 3)
 
 
+def find_probe_firmware():
+    for d in ("build-b68", "build"):
+        f = REPO_ROOT / d / "yunzii-b68_probe_smk.hex"
+        if f.exists():
+            return str(f)
+    return None
+
+
+PROBE_FIRMWARE = find_probe_firmware()
+
+# HID usage of the characters the probe types
+KEY_C, KEY_R, KEY_SPACE = 0x06, 0x15, 0x2C
+KEY_DIGIT = [0x27] + [0x1E + n for n in range(9)]  # 0 then 1..9
+
+
+class TestB68ProbeLayout(unittest.TestCase):
+    """The probe layout types the coordinates of the cell pressed: "c03r2 "."""
+
+    def typed(self, col, row):
+        if not PROBE_FIRMWARE:
+            self.skipTest("yunzii-b68_probe_smk.hex not built")
+        kb = Air60Sim(firmware=PROBE_FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            kb.matrix.press(col, row)
+            kb.scan_for_report(max_hits=600)
+            read_rows = kb._a("user_matrix_read_rows")  # let the main loop finish typing
+            kb.brk(read_rows)
+            for _ in range(400):
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.cmd("delete")
+            reports = kb.ep1_reports()
+        finally:
+            kb.close()
+        # a key goes down in one report and up in the next
+        return [r[2] for r in reports if r[2]]
+
+    def test_single_digit_column(self):
+        self.assertEqual(self.typed(3, 2), [KEY_C, KEY_DIGIT[0], KEY_DIGIT[3], KEY_R, KEY_DIGIT[2], KEY_SPACE])
+
+    def test_two_digit_column(self):
+        self.assertEqual(self.typed(12, 4), [KEY_C, KEY_DIGIT[1], KEY_DIGIT[2], KEY_R, KEY_DIGIT[4], KEY_SPACE])
+
+
 RECOVERY_CHORD = [(0, 0), (1, 0), (2, 0)]  # RECOVERY_CHORD_KEYS in kbdef.h
 ISP_ENTRY = 0xFF00
 MAX_STOPS = 400

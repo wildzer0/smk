@@ -16,6 +16,11 @@ keyboards += {
                 'dir' : kb_dir / 'layouts/default',
                 'src' : files('layouts/default/layout.c'),
             },
+            # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
+            'probe' : {
+                'dir' : kb_dir / 'layouts/probe',
+                'src' : files('layouts/probe/layout.c'),
+            },
         },
         'options' : {
             'keymap_sectors' : '3',  # 8 layers x 5 x 16 x 2 B + header = 1292 B per copy, two copies
