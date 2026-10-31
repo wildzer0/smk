@@ -31,6 +31,7 @@ un branch/PR. Le schede le scrivo io; tu implementi; io faccio review e tengo ag
 | [M0.10](M0.10-riletture-dump.md) | Riletture del dump e confronto | M0 | **Chiuso** | S |
 
 | [M1.7](M1.7-usb-stock.md) | Descrittori USB stock + preset sinowisp | M1 | **Chiuso** | S |
+| [M2.1](M2.1-scaffold-yunzii-b68.md) | Scaffold della tastiera `yunzii-b68` (matrice segnaposto) | M2 | **Pronto** | M |
 
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
