@@ -48,12 +48,13 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 | --- | --- | --- |
 | M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. M0.5 e M0.9 chiusi (G0 non superato). Dump verificato (M0.10 chiuso). Pronto: M0.4 (pinout connettore). M0.3 (acquisto Nano) ora **obbligatorio** prima del primo flash |
 | M0 | **chiusa a metà** | Restano M0.3, M0.4, M0.6, M0.7: si chiudono all'arrivo del Nano |
-| M1 | **in corso** | M1.7 pronto (utente). M1.6 (analisi del firmware stock) la svolge Claude sul dump. M1.2–M1.5 attendono M0.4 |
+| M1 | **in corso** | M1.7 chiuso (258a:010c, EP1 8 B + EP2 16 B IN, nessun EP OUT, feature ID6 da 519 B). M1.6 (analisi del firmware stock) la svolge Claude sul dump. M1.2–M1.5 attendono M0.4 |
 | M2–M8 | non iniziate | |
 
 Registro delle decisioni/rilievi emersi durante i task:
 
 * M0.9: **G0 non superato**: l'ISP stock si raggiunge solo tramite l'applicazione (258a:010c, iface 1, report 5). Nano/ICP obbligatorio prima del primo flash (R11). 
+* M1.7: lo stock configura via feature report ID 6 (519 B) su EP0 e non usa EP OUT ⇒ piano B di D8 confermato fattibile; D1 (EP2 OUT) resta da provare con S1.
 * M0.10: riletture identiche; il primo dump differiva di 2 byte di stato (0xC60A, 0xC65A). Backup affidabile: `backups/dump/r1.bin`.
 * M0.5: reset vector stock = `LJMP 0x9A26` (applicazione); il bootloader è a 0xF000. Raccolta del report mancante; doppia lettura da confermare in M0.9.
 * M0.1: la suite `meson test` su build release ha 1 errore noto (`console_buf` esiste solo in debug); non è un difetto del firmware.

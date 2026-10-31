@@ -53,6 +53,37 @@ cd tests && SMK_UCSIM=<ucsim-sh68f90> \
 
 Il report grezzo di M0.1 è in [tasks/M0.1-report.txt](../tasks/M0.1-report.txt).
 
+## USB stock (M1.7, 2026-10-31)
+
+Dati grezzi in [tasks/M1.7-report.txt](../tasks/M1.7-report.txt).
+
+**Tastiera cablata:** `258a:010c`, produttore "BY Tech", prodotto "Gaming Keyboard", nessun seriale, bcdDevice 0x2002,
+full-speed, 500 mA, 3 endpoint (EP0 + 2).
+
+| Interfaccia | Classe | Endpoint | Contenuto |
+| --- | --- | --- | --- |
+| 0 | HID boot, protocollo 1 (tastiera) | EP1 IN 8 B, 1 ms | Tastiera 6KRO standard + 5 LED in uscita (via EP0) |
+| 1 | HID, nessun boot | EP2 IN 16 B, 1 ms | Report con ID: 1 system control (3 bit), 2 consumer (16 bit), 3 vendor (3 B), 4 NKRO (120 bit, usage 4–0x70), 5 **feature 5 B** (ISP), 6 vendor: input 7 B + **feature 519 B**, 7 mouse (5 pulsanti, X/Y 16 bit, wheel, pan) |
+
+Osservazioni utili al porting:
+
+* La struttura è **la stessa di SMK/NuPhy** (EP1 8 B boot + EP2 16 B composito, ISP = feature report 5 sull'interfaccia 1),
+  per cui il preset di sinowisp `--isp_iface_num=1 --isp_report_id=5` è confermato.
+* **Non esistono endpoint OUT**: i LED e tutta la configurazione viaggiano su EP0 (SET_REPORT/GET_REPORT). Il
+  software del produttore usa il **feature report ID 6 da 519 byte** come canale di configurazione: prova pratica che
+  il canale a feature report via EP0 (piano B di D8 e spike S1) funziona su questo chip.
+* La mia ipotesi D1 (EP2 IN+OUT come Raw HID da 32 B per VIA/Vial) resta da validare con lo spike S1: lo stock non usa
+  EP OUT e non dimostra che funzionino.
+* Il mouse report (ID 7) è presente: se lo vogliamo (mousekeys) possiamo copiare questo layout.
+
+**Dongle 2.4G (non richiesto, utile):** `3554:FA09`, produttore "Compx", prodotto "2.4G Wireless Receiver"; low-speed;
+interfaccia 0 boot tastiera con EP1 IN 8 B (inclusa una riga vendor), interfaccia 1 boot mouse con EP2 IN 25 B e un
+feature report vendor ID 6 da 7 B. È un dispositivo separato: la tastiera in modalità 2.4G parla con il dongle via BK3632,
+non con il PC.
+
+**Preset sinowisp:** non verificati. Il test è stato lanciato in modo errato (`yunizii-al66` con refuso e senza il
+sottocomando `read`). Non serve: con `--platform sh68f90 --vendor_id 0x258a --product_id 0x010c` sinowisp funziona già.
+
 ## Hardware (M0.4)
 
 *Da compilare: foto PCB, pad ICP, pinout.*
