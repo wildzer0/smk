@@ -38,10 +38,12 @@ def find_firmware():
     candidates = (sorted(Path.cwd().glob("*_smk.hex"))
                   + sorted(REPO_ROOT.glob("build/*_smk.hex"))
                   + sorted(REPO_ROOT.glob("*_smk.hex")))
-    for c in candidates:  # prefer nuphy-air60 (the reference target)
+    # these tests are written for the nuphy-air60 reference target; a tree built for another board only (for example
+    # -Dboards=yunzii-b68) skips them. The board's own tests (test_yunzii_b68_matrix.py) name their firmware themselves.
+    for c in candidates:
         if "nuphy" in c.name:
             return str(c)
-    return str(candidates[0]) if candidates else None
+    return None
 
 
 def load_symbols(map_path):

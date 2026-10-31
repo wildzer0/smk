@@ -511,3 +511,10 @@ Ancora aperte:
 * Nuova opzione `-Dboards=yunzii-b68`: configura solo la B68 (vuota = tutte le schede).
 * Flicker LED: `LED_SUBFRAMES_PER_SCAN` 2 → 4 (cornice ≈ 8 ms). Da verificare sulla tastiera. LED di stato che pulsa: causa non nota.
 * Test: 45 test B68 + unità host passano. I test delle altre schede (boot, usb, ...) richiedono la build completa.
+
+## 2026-11-01: tap dance, tastiera salvata, LED veloci, changelog
+
+* Tap dance Vial (8 voci, `TD(0)` sul click dell'encoder), tastiera salvata legata alla predefinita del firmware, interrupt LED 6 volte più leggero,
+  ridisegno a pezzi, tre effetti nuovi. Dettagli e stato in [CHANGELOG.md](../CHANGELOG.md).
+* Test: 52 test B68 + unità host passano (circa 12 minuti); gli altri file si saltano senza NuPhy.
+* Prossimo: profili (e, con loro, la scheda *Settings* di Vial); radio quando la tastiera si potrà aprire.
