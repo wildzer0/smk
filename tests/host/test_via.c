@@ -53,6 +53,44 @@ bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t
     return true;
 }
 
+// the macro buffer
+static uint8_t macro_bytes[KEYMAP_MACRO_BYTES];
+
+void keymap_store_macro_read(uint16_t offset, uint8_t size, uint8_t *dst)
+{
+    for (uint8_t i = 0; i < size; i++) {
+        dst[i] = (offset + i < KEYMAP_MACRO_BYTES) ? macro_bytes[offset + i] : 0;
+    }
+}
+
+void keymap_store_macro_write(uint16_t offset, uint8_t size, const uint8_t *src)
+{
+    for (uint8_t i = 0; i < size; i++) {
+        if (offset + i < KEYMAP_MACRO_BYTES) {
+            macro_bytes[offset + i] = src[i];
+        }
+    }
+}
+
+void keymap_store_macro_clear(void)
+{
+    memset(macro_bytes, 0, sizeof macro_bytes);
+}
+
+// the keyboard HUD has its own tests: here it only has to be asked
+static bool hud_asked;
+
+bool hud_receive(uint8_t *data, uint8_t length)
+{
+    (void)length;
+    if (data[0] != 0xF0) {
+        return false;
+    }
+    hud_asked = true;
+    data[2] = 0;
+    return true;
+}
+
 static bool    down[MATRIX_ROWS][MATRIX_COLS];
 static uint32_t now;
 
@@ -201,12 +239,38 @@ static void test_buffer(void)
     CHECK(keys[0][0][0] == 0x0102);
 }
 
-static void test_macros_are_empty(void)
+static void test_macros(void)
 {
     SEND(0x0C, 0xFF);
-    CHECK(msg[1] == 0);
+    CHECK(msg[1] == KEYMAP_MACRO_COUNT);
     SEND(0x0D, 0xFF, 0xFF);
-    CHECK(msg[1] == 0 && msg[2] == 0);
+    CHECK(msg[1] == 0 && msg[2] == KEYMAP_MACRO_BYTES);
+
+    // locked: the buffer cannot be written (the request comes back untouched)
+    lock();
+    SEND(0x0F, 0x00, 0x00, 3, 'h', 'i', 0);
+    CHECK(macro_bytes[0] == 0 && msg[0] == 0x0F && msg[4] == 'h');
+
+    unlock_for_real();
+    SEND(0x0F, 0x00, 0x00, 3, 'h', 'i', 0);
+    CHECK(macro_bytes[0] == 'h' && macro_bytes[1] == 'i');
+    SEND(0x0F, 0x00, 0x03, 28, 'x'); // a write at offset 3
+    CHECK(macro_bytes[3] == 'x');
+    SEND(0x0F, 0x00, 0x00, 29, 'Q'); // too long: ignored
+    CHECK(macro_bytes[0] == 'h');
+
+    // reading is open to everyone
+    lock();
+    SEND(0x0E, 0x00, 0x00, 4);
+    CHECK(msg[4] == 'h' && msg[5] == 'i' && msg[6] == 0 && msg[7] == 'x');
+
+    // reset empties the buffer, but only for an unlocked keyboard
+    SEND(0x10);
+    CHECK(macro_bytes[0] == 'h');
+    unlock_for_real();
+    SEND(0x10);
+    CHECK(macro_bytes[0] == 0 && macro_bytes[3] == 0);
+    lock();
 }
 
 static void test_keyboard_values(void)
@@ -249,6 +313,13 @@ static void test_bootloader_jump_needs_unlock(void)
     SEND(0x0B);
     CHECK(via_bootloader_requested());
     lock();
+}
+
+static void test_hud_commands_go_to_the_hud(void)
+{
+    hud_asked = false;
+    SEND(0xF0, 0x01);
+    CHECK(hud_asked && msg[0] == 0xF0); // answered by the HUD, not "unhandled"
 }
 
 static void test_unhandled(void)
@@ -392,10 +463,11 @@ int main(void)
     test_get_set_keycode();
     test_layer_count_and_reset();
     test_buffer();
-    test_macros_are_empty();
+    test_macros();
     test_keyboard_values();
     test_matrix_state_needs_unlock();
     test_bootloader_jump_needs_unlock();
+    test_hud_commands_go_to_the_hud();
     test_unhandled();
     test_vial_identity();
     test_vial_definition_pages();

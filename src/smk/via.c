@@ -5,6 +5,12 @@
 #include "matrix.h"
 #include "timer.h"
 #include "kbdef.h"
+#ifdef HUD_ENABLE
+#    include "hud.h"
+#endif
+#ifdef KEYMAP_MACRO_BYTES
+#    include "keymap_store.h"
+#endif
 
 #define VIA_PROTOCOL_VERSION 0x0009u
 
@@ -221,7 +227,44 @@ void via_receive(uint8_t *data, uint8_t length)
             break;
         }
 
-        // no macros: the GUI then offers no macro editor
+#ifdef KEYMAP_MACRO_BYTES
+        case id_dynamic_keymap_macro_get_count:
+            args[0] = KEYMAP_MACRO_COUNT;
+            break;
+
+        case id_dynamic_keymap_macro_get_buffer_size:
+            args[0] = (uint8_t)(KEYMAP_MACRO_BYTES >> 8);
+            args[1] = (uint8_t)(KEYMAP_MACRO_BYTES & 0xFFu);
+            break;
+
+        case id_dynamic_keymap_macro_get_buffer: {
+            const uint16_t offset = (uint16_t)(((uint16_t)args[0] << 8) | args[1]);
+            const uint8_t  size   = args[2];
+
+            if (size <= MAX_CHUNK) {
+                keymap_store_macro_read(offset, size, &args[3]);
+            }
+            break;
+        }
+
+        case id_dynamic_keymap_macro_set_buffer: {
+            // until the keyboard is unlocked the macros cannot be changed: the request is echoed back untouched
+            const uint16_t offset = (uint16_t)(((uint16_t)args[0] << 8) | args[1]);
+            const uint8_t  size   = args[2];
+
+            if (vial_is_unlocked() && size <= MAX_CHUNK) {
+                keymap_store_macro_write(offset, size, &args[3]);
+            }
+            break;
+        }
+
+        case id_dynamic_keymap_macro_reset:
+            if (vial_is_unlocked()) {
+                keymap_store_macro_clear();
+            }
+            break;
+#else
+        // no macro buffer: the GUI then offers no macro editor
         case id_dynamic_keymap_macro_get_count:
             args[0] = 0;
             break;
@@ -235,6 +278,7 @@ void via_receive(uint8_t *data, uint8_t length)
         case id_dynamic_keymap_macro_set_buffer:
         case id_dynamic_keymap_macro_reset:
             break;
+#endif
 
         case id_bootloader_jump:
             // like the other dangerous commands it needs the unlock; the reply goes out first, then the jump
@@ -248,6 +292,11 @@ void via_receive(uint8_t *data, uint8_t length)
             break;
 
         default:
+#ifdef HUD_ENABLE
+            if (hud_receive(data, length)) {
+                break; // the keyboard HUD's own command
+            }
+#endif
             data[0] = id_unhandled;
             break;
     }

@@ -185,6 +185,40 @@ static void test_encoders_are_stored_too(void)
     CHECK(keymap_store_get_encoder(3, 0, true) == keymap_default_encoder(3, 0, true));
 }
 
+static void test_macros_are_stored_and_survive_a_keymap_reset(void)
+{
+    uint8_t in[5]  = { 'a', 'b', 0, 'c', 0 };
+    uint8_t out[8] = { 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE, 0xEE };
+
+    power_on_fresh();
+    keymap_store_macro_read(0, 8, out);
+    CHECK(out[0] == 0 && out[7] == 0); // nothing stored: empty
+
+    keymap_store_macro_write(0, 5, in);
+    CHECK(keymap_store_dirty());
+    keymap_store_flush();
+    reboot();
+
+    keymap_store_macro_read(0, 8, out);
+    CHECK(out[0] == 'a' && out[1] == 'b' && out[2] == 0 && out[3] == 'c' && out[4] == 0 && out[5] == 0);
+
+    // an odd offset writes the high byte of a word; reads and writes past the end are harmless
+    uint8_t x = 'Z';
+    keymap_store_macro_write(63, 1, &x);
+    keymap_store_macro_write(64, 1, &x);
+    keymap_store_macro_write(200, 1, &x);
+    keymap_store_macro_read(62, 4, out);
+    CHECK(out[0] == 0 && out[1] == 'Z' && out[2] == 0 && out[3] == 0);
+
+    // resetting the keymap leaves the macros alone; clearing them empties the buffer
+    keymap_store_reset();
+    keymap_store_macro_read(0, 3, out);
+    CHECK(out[0] == 'a' && out[1] == 'b');
+    keymap_store_macro_clear();
+    keymap_store_macro_read(0, 8, out);
+    CHECK(out[0] == 0 && out[1] == 0 && out[3] == 0);
+}
+
 static void test_same_value_is_not_an_edit(void)
 {
     power_on_fresh();
@@ -303,6 +337,7 @@ int main(void)
     test_fresh_flash_gives_defaults();
     test_edit_survives_reboot();
     test_encoders_are_stored_too();
+    test_macros_are_stored_and_survive_a_keymap_reset();
     test_same_value_is_not_an_edit();
     test_out_of_range();
     test_reset_stores_defaults();

@@ -37,6 +37,13 @@ void layer_hold(uint8_t layer, bool on);
 void    layer_set_default(uint8_t layer);
 uint8_t layer_get_default(void);
 
+// Bit n set = layer n is on (the default layer is not part of it).
+uint8_t layer_get_state(void);
+
+// For a status display: the one-shot layer waiting for a key (0xFF if none) and the one-shot modifiers armed.
+uint8_t layer_oneshot_layer(void);
+uint8_t layer_oneshot_mods(void);
+
 // The keycode under the active layers for a key about to be pressed.
 uint16_t layer_lookup(uint8_t row, uint8_t col);
 

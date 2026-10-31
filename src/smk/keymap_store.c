@@ -14,15 +14,23 @@
 #    define ENCODERS      0
 #    define ENCODER_WORDS 0
 #endif
-#define WORDS      ((uint16_t)(KEY_WORDS + ENCODER_WORDS)) // keys first, then the encoders
+#ifdef KEYMAP_MACRO_BYTES
+#    define MACRO_BYTES KEYMAP_MACRO_BYTES
+#    define MACRO_WORDS ((uint16_t)((KEYMAP_MACRO_BYTES + 1) / 2))
+_Static_assert(KEYMAP_MACRO_BYTES % 2 == 0 && KEYMAP_MACRO_BYTES / 8 < 256, "the macro buffer is a whole number of words and its size must fit a header byte");
+#else
+#    define MACRO_BYTES 0
+#    define MACRO_WORDS 0
+#endif
+#define WORDS      ((uint16_t)(KEY_WORDS + ENCODER_WORDS + MACRO_WORDS)) // keys, then the encoders, then the macros
 #define PAYLOAD    ((uint16_t)(WORDS * 2u))
-#define HEADER     12u // 11 bytes are written, the last one stays erased
+#define HEADER     12u
 #define SLOT_BYTES ((uint16_t)(FLASH_KEYMAP_SECTORS * FLASH_KEYMAP_SECTOR_SIZE))
 #define CHUNK      ((uint16_t)64u)
 
 #define MAGIC0  'K'
 #define MAGIC1  'M'
-#define VERSION 2u
+#define VERSION 3u
 
 #define NO_SLOT 0xFFu
 
@@ -32,6 +40,9 @@ _Static_assert((uint32_t)HEADER + PAYLOAD <= SLOT_BYTES, "the keymap does not fi
 static __xdata uint16_t shadow[LAYERS][MATRIX_ROWS][MATRIX_COLS];
 #ifdef ENCODER_COUNT
 static __xdata uint16_t encoder_shadow[LAYERS][ENCODER_COUNT][2]; // [ccw, cw]
+#endif
+#ifdef KEYMAP_MACRO_BYTES
+static __xdata uint16_t macro_shadow[MACRO_WORDS]; // the buffer's bytes, little-endian in each word
 #endif
 static __xdata uint8_t  chunk[CHUNK];
 
@@ -59,9 +70,14 @@ static uint16_t crc16_update(uint16_t crc, uint8_t byte)
     return crc;
 }
 
-// The payload as one run of words: the keys, then the encoders.
+// The payload as one run of words: the keys, then the encoders, then the macros.
 static __xdata uint16_t *word_at(uint16_t index)
 {
+#ifdef KEYMAP_MACRO_BYTES
+    if (index >= KEY_WORDS + ENCODER_WORDS) {
+        return &macro_shadow[0] + (index - KEY_WORDS - ENCODER_WORDS);
+    }
+#endif
 #ifdef ENCODER_COUNT
     if (index >= KEY_WORDS) {
         return &encoder_shadow[0][0][0] + (index - KEY_WORDS);
@@ -70,7 +86,8 @@ static __xdata uint16_t *word_at(uint16_t index)
     return &shadow[0][0][0] + index;
 }
 
-static void load_defaults(void)
+// `macros` also empties the macro buffer: wanted when nothing valid was stored, not when only the keymap is reset.
+static void load_defaults(bool macros)
 {
     for (uint8_t layer = 0; layer < LAYERS; layer++) {
         for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
@@ -85,6 +102,15 @@ static void load_defaults(void)
         }
 #endif
     }
+#ifdef KEYMAP_MACRO_BYTES
+    if (macros) {
+        for (uint16_t i = 0; i < MACRO_WORDS; i++) {
+            macro_shadow[i] = 0;
+        }
+    }
+#else
+    (void)macros;
+#endif
 }
 
 // The payload is little-endian words, row-major per layer.
@@ -104,9 +130,9 @@ static uint16_t shadow_crc(void)
 // Reads the header of `slot`; true when it is a complete keymap of this build's shape.
 static bool slot_header(uint8_t slot)
 {
-    flash_read_into(FLASH_CODE, slot_addr(slot), chunk, 11);
+    flash_read_into(FLASH_CODE, slot_addr(slot), chunk, 12);
 
-    if (chunk[0] != MAGIC0 || chunk[1] != MAGIC1 || chunk[2] != VERSION || chunk[3] != LAYERS || chunk[4] != MATRIX_ROWS || chunk[5] != MATRIX_COLS || chunk[10] != ENCODERS) {
+    if (chunk[0] != MAGIC0 || chunk[1] != MAGIC1 || chunk[2] != VERSION || chunk[3] != LAYERS || chunk[4] != MATRIX_ROWS || chunk[5] != MATRIX_COLS || chunk[10] != ENCODERS || chunk[11] != (MACRO_BYTES / 8)) {
         return false;
     }
 
@@ -163,7 +189,7 @@ void keymap_store_init(void)
     active_slot = NO_SLOT;
 
     if (!valid0 && !valid1) {
-        load_defaults();
+        load_defaults(true);
         return;
     }
 
@@ -215,9 +241,54 @@ bool keymap_store_set_encoder(uint8_t layer, uint8_t encoder, bool clockwise, ui
 }
 #endif
 
+#ifdef KEYMAP_MACRO_BYTES
+void keymap_store_macro_read(uint16_t offset, uint8_t size, uint8_t *dst)
+{
+    for (uint8_t i = 0; i < size; i++) {
+        const uint16_t at = (uint16_t)(offset + i);
+
+        if (at >= MACRO_BYTES) {
+            dst[i] = 0;
+        } else {
+            const uint16_t word = macro_shadow[at / 2];
+            dst[i]              = (at & 1u) ? (uint8_t)(word >> 8) : (uint8_t)(word & 0xFFu);
+        }
+    }
+}
+
+void keymap_store_macro_write(uint16_t offset, uint8_t size, const uint8_t *src)
+{
+    for (uint8_t i = 0; i < size; i++) {
+        const uint16_t at = (uint16_t)(offset + i);
+
+        if (at >= MACRO_BYTES) {
+            continue;
+        }
+
+        const uint16_t word = macro_shadow[at / 2];
+        const uint16_t next = (at & 1u) ? (uint16_t)((word & 0x00FFu) | ((uint16_t)src[i] << 8)) : (uint16_t)((word & 0xFF00u) | src[i]);
+
+        if (next != word) {
+            macro_shadow[at / 2] = next;
+            dirty                = true;
+        }
+    }
+}
+
+void keymap_store_macro_clear(void)
+{
+    for (uint16_t i = 0; i < MACRO_WORDS; i++) {
+        if (macro_shadow[i]) {
+            macro_shadow[i] = 0;
+            dirty           = true;
+        }
+    }
+}
+#endif
+
 void keymap_store_reset(void)
 {
-    load_defaults();
+    load_defaults(false);
     dirty = true;
 }
 
@@ -268,7 +339,8 @@ void keymap_store_flush(void)
     chunk[8]           = (uint8_t)(crc & 0xFFu);
     chunk[9]           = (uint8_t)(crc >> 8);
     chunk[10]          = ENCODERS;
-    flash_program_from(FLASH_CODE, base, chunk, 11);
+    chunk[11]          = MACRO_BYTES / 8; // the macro buffer's size, in 8-byte units, so a size change invalidates old data
+    flash_program_from(FLASH_CODE, base, chunk, 12);
 
     active_slot = target;
     active_seq  = seq;

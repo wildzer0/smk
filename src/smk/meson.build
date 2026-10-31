@@ -6,6 +6,7 @@ src_smk += files(
     'matrix.c',
     'layer.c',
     'tapping.c',
+    'macro.c',
     'keymap.c',
     'keymap_store.c',
     'encoder.c',
@@ -26,4 +27,5 @@ src_via = files(
     'via.c',
     'vial.c',
     'raw_hid.c',
+    'hud.c',
 )

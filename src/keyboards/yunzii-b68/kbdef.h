@@ -18,6 +18,10 @@
 // `keymap_sectors` option in meson.build reserves the room; keymap_store.c checks it fits).
 #define KEYMAP_DYNAMIC_LAYERS 8
 
+// Vial macros: 16 of them in a 512-byte buffer, stored with the keymap
+#define KEYMAP_MACRO_COUNT 16
+#define KEYMAP_MACRO_BYTES 512
+
 // Row Pin Bits
 #define KB_R0_P7_1 _P7_1
 #define KB_R1_P7_2 _P7_2
@@ -81,3 +85,8 @@
 #define ENCODER_COUNT 1
 #define ENCODER_RESOLUTION 4
 #define ENCODER_READ_STATE(n) ((uint8_t)((P0 >> 6) & 0x03u))
+
+// Keyboard HUD (tools/hud): live state over the raw HID interface, plus a key to show/hide the overlay.
+// HUD_TOG is the first custom keycode (QK_KB_0, listed in vial.json under customKeycodes).
+#define HUD_ENABLE
+#define HUD_TOGGLE_KEYCODE 0x7E00

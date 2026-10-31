@@ -129,5 +129,12 @@
         "4,15"
       ]
     ]
-  }
+  },
+  "customKeycodes": [
+    {
+      "name": "HUD Toggle",
+      "title": "Show or hide the keyboard HUD overlay",
+      "shortName": "HUD"
+    }
+  ]
 }

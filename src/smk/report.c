@@ -212,6 +212,11 @@ uint8_t get_mods(void)
 {
     return real_mods;
 }
+
+uint8_t get_weak_mods(void)
+{
+    return weak_mods;
+}
 void add_mods(uint8_t mods)
 {
     real_mods |= mods;
@@ -227,11 +232,6 @@ void set_mods(uint8_t mods)
 void clear_mods(void)
 {
     real_mods = 0;
-}
-
-uint8_t get_weak_mods(void)
-{
-    return weak_mods;
 }
 
 uint8_t biton(uint8_t bits)

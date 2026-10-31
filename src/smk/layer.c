@@ -81,6 +81,21 @@ void layer_hold(uint8_t layer, bool on)
     }
 }
 
+uint8_t layer_get_state(void)
+{
+    return layer_state;
+}
+
+uint8_t layer_oneshot_layer(void)
+{
+    return os_layer;
+}
+
+uint8_t layer_oneshot_mods(void)
+{
+    return osm_armed;
+}
+
 static void layer_on(uint8_t layer)
 {
     layer_state |= (uint8_t)(1u << layer);

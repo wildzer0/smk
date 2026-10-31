@@ -25,3 +25,6 @@ void keymap_task(void);
 // Edit one rotation keycode of an encoder (clockwise or counter-clockwise).
 bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode);
 #endif
+
+// Counts changes made to the keymap, wrapping at 256: a display compares it to know when to re-read the keys.
+uint8_t keymap_version(void);

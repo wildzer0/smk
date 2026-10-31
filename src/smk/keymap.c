@@ -13,6 +13,7 @@
 #define FLUSH_AFTER_SWEEPS 2000u
 
 static uint16_t last_edit;
+static uint8_t  version;
 
 uint16_t keymap_default(uint8_t layer, uint8_t row, uint8_t col)
 {
@@ -44,6 +45,7 @@ uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
 
 bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode)
 {
+    version++;
     last_edit = tick_sweeps();
     return keymap_store_set_encoder(layer, encoder, clockwise, keycode);
 }
@@ -56,14 +58,21 @@ void keymap_init(void)
 
 bool keymap_set(uint8_t layer, uint8_t row, uint8_t col, uint16_t keycode)
 {
+    version++;
     last_edit = tick_sweeps();
     return keymap_store_set(layer, row, col, keycode);
 }
 
 void keymap_reset(void)
 {
+    version++;
     last_edit = tick_sweeps();
     keymap_store_reset();
+}
+
+uint8_t keymap_version(void)
+{
+    return version;
 }
 
 void keymap_task(void)
@@ -98,6 +107,11 @@ bool keymap_set(uint8_t layer, uint8_t row, uint8_t col, uint16_t keycode)
 }
 
 void keymap_reset(void) {}
+
+uint8_t keymap_version(void)
+{
+    return 0;
+}
 
 void keymap_task(void) {}
 

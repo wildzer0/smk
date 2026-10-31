@@ -92,6 +92,7 @@ inline void clear_keys(void)
 
 /* modifiers */
 uint8_t get_mods(void);
+uint8_t get_weak_mods(void);
 void    add_mods(uint8_t mods);
 void    del_mods(uint8_t mods);
 void    set_mods(uint8_t mods);

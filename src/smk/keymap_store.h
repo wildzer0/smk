@@ -36,6 +36,15 @@ bool     keymap_store_set_encoder(uint8_t layer, uint8_t encoder, bool clockwise
 // Back to the compiled-in keymap (dirty, so the next flush stores it).
 void keymap_store_reset(void);
 
+#ifdef KEYMAP_MACRO_BYTES
+// The macro buffer, as Vial sees it: macros back to back, each ended by a 0 byte. Reads past the end give 0.
+void keymap_store_macro_read(uint16_t offset, uint8_t size, uint8_t *dst);
+// Writes past the end are ignored. Marks the store dirty.
+void keymap_store_macro_write(uint16_t offset, uint8_t size, const uint8_t *src);
+// Empties all macros.
+void keymap_store_macro_clear(void);
+#endif
+
 bool keymap_store_dirty(void);
 
 // Writes the RAM copy to flash if it changed. Takes tens of milliseconds.

@@ -486,6 +486,113 @@ class TestB68EncoderFromVial(TestB68TapHold):
             kb.close()
 
 
+class TestB68MacroFromTheStore(TestB68TapHold):
+    """A macro stored in flash is loaded at boot and typed from a macro key. The slot is built here byte by byte
+    (header, payload, CRC), which also checks the on-flash format."""
+
+    SLOT_ADDR = 0xDC00  # FLASH_KEYMAP_ADDR of the B68: 4 sectors per slot, two slots below the settings sector
+
+    @staticmethod
+    def crc16(data):
+        crc = 0xFFFF
+        for byte in data:
+            crc ^= byte << 8
+            for _ in range(8):
+                crc = ((crc << 1) ^ 0x1021) & 0xFFFF if crc & 0x8000 else (crc << 1) & 0xFFFF
+        return crc
+
+    def slot(self, macro, cell_keycodes):
+        layers, rows, cols = 8, 5, 16
+        keys = [0] * (layers * rows * cols)
+        for (layer, row, col), keycode in cell_keycodes.items():
+            keys[(layer * rows + row) * cols + col] = keycode
+        payload = b"".join(w.to_bytes(2, "little") for w in keys)
+        payload += b"".join(w.to_bytes(2, "little") for w in [0] * (layers * 1 * 2))  # one encoder
+        payload += macro.ljust(512, b"\0")
+        crc = self.crc16(payload)
+        header = bytes([ord("K"), ord("M"), 3, layers, rows, cols, 1, 0, crc & 0xFF, crc >> 8, 1, 512 // 8, 0xFF][:12])
+        return header + b"\xff" * (12 - len(header)) + payload if len(header) < 12 else header + payload
+
+    def session_with_slot(self, slot):
+        if not RAWHID_FIRMWARE:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+        kb = Air60Sim(firmware=RAWHID_FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        for offset in range(0, len(slot), 64):
+            kb.cmd("set mem rom 0x%x " % (self.SLOT_ADDR + offset) + " ".join("0x%02x" % b for b in slot[offset:offset + 64]))
+        kb.boot(usb=True)
+        kb.mark_usb_configured()
+        kb.brk(kb._a("user_matrix_read_rows"))
+        return kb
+
+    def test_stored_macro_is_typed(self):
+        slot = self.slot(b"hi!\0", {(0, 1, 1): 0x7700})  # Q = M0, macro 0 = "hi!"
+        kb = self.session_with_slot(slot)
+        try:
+            kb.matrix.press(1, 1)
+            self.spin(kb, 900)
+            typed = [r[3] for r in kb.ep1_reports() if r[0] == 3 and r[3]]
+            self.assertEqual(typed, [0x0B, 0x0C, 0x1E])  # h, i, then ! = Shift + 1
+        finally:
+            kb.close()
+
+    def test_second_macro(self):
+        slot = self.slot(b"a\0bc\0", {(0, 1, 1): 0x7701})  # M1 = "bc"
+        kb = self.session_with_slot(slot)
+        try:
+            kb.matrix.press(1, 1)
+            self.spin(kb, 900)
+            typed = [r[3] for r in kb.ep1_reports() if r[0] == 3 and r[3]]
+            self.assertEqual(typed, [0x05, 0x06])
+        finally:
+            kb.close()
+
+
+class TestB68Hud(TestB68TapHold):
+    """The keyboard HUD's questions over the raw HID interface (the simulator's log shows a packet's first 24 bytes)."""
+
+    def ask(self, kb, command, sequence=5, args=()):
+        self.via(kb, [0xF0, command, 0, sequence] + list(args))
+        packets = [[int(x, 16) for x in m.split()]
+                   for m in re.findall(r"\[SIE\] EP2 IN \d+ bytes:((?: [0-9a-f]{2})*)", kb.stderr_text())]
+        return packets[-1]
+
+    def test_info(self):
+        kb = self.session()
+        try:
+            reply = self.ask(kb, 0x01)
+            self.assertEqual(reply[:4], [0xF0, 0x01, 0x00, 5])  # command, status ok, the sequence number back
+            self.assertEqual(reply[4:7], [2, 5, 16])              # protocol 2, 5 rows, 16 columns
+            self.assertEqual(reply[7], 8)                          # layers
+            self.assertEqual(reply[10] | (reply[11] << 8), 0x7E00)  # the HUD_TOG key
+            self.assertEqual(reply[14], 2)                         # bytes per matrix row
+        finally:
+            kb.close()
+
+    def test_pressed_keys(self):
+        kb = self.session()
+        try:
+            kb.matrix.press(11, 2)  # column 11 sits in the high byte of a row
+            kb.matrix.press(1, 1)
+            self.spin(kb, 500)
+            reply = self.ask(kb, 0x04)
+            # rows are two bytes each, low byte first: row 1 has column 1, row 2 has column 11 (bit 3 of the high byte)
+            self.assertEqual(reply[4:14], [0, 0, 0x02, 0, 0, 0x08, 0, 0, 0, 0])
+        finally:
+            kb.close()
+
+    def test_state_shows_the_layer(self):
+        kb = self.session()
+        try:
+            kb.matrix.press(9, 4)  # Fn
+            self.spin(kb, 500)
+            reply = self.ask(kb, 0x02)
+            self.assertEqual(reply[4], 0x02)  # layer 1 on
+            self.assertEqual(reply[8], 0x01)  # default layer 0
+        finally:
+            kb.close()
+
+
 class TestB68Encoder(unittest.TestCase):
     """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
 

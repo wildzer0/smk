@@ -12,6 +12,8 @@
 #include "sleep.h"
 #include "layer.h"
 #include "tapping.h"
+#include "macro.h"
+#include "watchdog.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -92,6 +94,26 @@ void matrix_tap_keycode(uint16_t keycode)
 
 static void process_key_state(uint8_t row, uint8_t col, bool pressed);
 
+#ifdef KEYMAP_MACRO_BYTES
+void macro_hook_press(uint16_t keycode)
+{
+    send_keycode(keycode, true);
+}
+
+void macro_hook_release(uint16_t keycode)
+{
+    send_keycode(keycode, false);
+}
+
+void macro_hook_wait_ms(uint16_t ms)
+{
+    while (ms--) {
+        watchdog_kick();
+        delay_ms(1);
+    }
+}
+#endif
+
 // ---- what tapping.c needs from the rest of the firmware ----
 void tapping_hook_replay(uint8_t row, uint8_t col, bool pressed)
 {
@@ -135,6 +157,18 @@ static void process_key_state(uint8_t row, uint8_t col, bool pressed)
     if (layer_process(qcode, pressed)) {
         return;
     }
+
+#ifdef KEYMAP_MACRO_BYTES
+    if (IS_QK_MACRO(qcode)) {
+        if (pressed) {
+            layer_key_pressed();
+            macro_play((uint8_t)(qcode - QK_MACRO));
+        } else {
+            layer_key_released();
+        }
+        return;
+    }
+#endif
 
     if (pressed) {
         layer_key_pressed();

@@ -57,6 +57,22 @@ class TestEncoder(unittest.TestCase):
                       extra_flags=("-D__code=", "-D__critical="))
 
 
+class TestHud(unittest.TestCase):
+    def test_hud_protocol_1(self):
+        build_and_run(self, "tests/host/test_hud.c", "src/smk/hud.c",
+                      extra_flags=("-D__code=", "-D__xdata="))
+
+    def test_hud_protocol_2_wide_matrix(self):
+        build_and_run(self, "tests/host/test_hud.c", "src/smk/hud.c",
+                      extra_flags=("-D__code=", "-D__xdata=", "-DMATRIX_ROWS=5", "-DMATRIX_COLS=16"))
+
+
+class TestMacro(unittest.TestCase):
+    def test_macro(self):
+        build_and_run(self, "tests/host/test_macro.c", "src/smk/macro.c",
+                      extra_flags=("-D__code=", "-D__xdata="))
+
+
 class TestTapping(unittest.TestCase):
     def test_tapping(self):
         build_and_run(self, "tests/host/test_tapping.c", "src/smk/tapping.c")
