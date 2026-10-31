@@ -88,6 +88,11 @@ uint16_t keymap_default(uint8_t layer, uint8_t row, uint8_t col)
     return (uint16_t)(0x100u + layer * 16u + row * 4u + col);
 }
 
+uint16_t keymap_default_encoder(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    return (uint16_t)(0x400u + layer * 4u + encoder * 2u + (clockwise ? 1u : 0u));
+}
+
 static int failures;
 static int checks;
 
@@ -160,6 +165,24 @@ static void test_edit_survives_reboot(void)
     reboot();
     CHECK(keymap_store_get(2, 1, 1) == 0x1234);
     CHECK(keymap_store_get(2, 0, 0) == keymap_default(2, 0, 0)); // the rest untouched
+}
+
+static void test_encoders_are_stored_too(void)
+{
+    power_on_fresh();
+    CHECK(keymap_store_get_encoder(3, 0, true) == keymap_default_encoder(3, 0, true));
+    CHECK(keymap_store_set_encoder(3, 0, true, 0x1234));
+    CHECK(keymap_store_set_encoder(3, 0, false, 0x4321));
+    CHECK(!keymap_store_set_encoder(8, 0, true, 1) && !keymap_store_set_encoder(0, 1, true, 1)); // no such layer / encoder
+    keymap_store_flush();
+    reboot();
+    CHECK(keymap_store_get_encoder(3, 0, true) == 0x1234);
+    CHECK(keymap_store_get_encoder(3, 0, false) == 0x4321);
+    CHECK(keymap_store_get_encoder(2, 0, true) == keymap_default_encoder(2, 0, true));
+
+    // a reset brings the encoders back too
+    keymap_store_reset();
+    CHECK(keymap_store_get_encoder(3, 0, true) == keymap_default_encoder(3, 0, true));
 }
 
 static void test_same_value_is_not_an_edit(void)
@@ -254,7 +277,7 @@ static void test_corrupt_payload_falls_back(void)
     apply_edit(2);
     keymap_store_flush(); // slot B, newest
 
-    flip(FLASH_KEYMAP_ADDR + 2 * SECTOR + 20); // a payload byte of slot B
+    flip(FLASH_KEYMAP_ADDR + FLASH_KEYMAP_SECTORS * SECTOR + 20); // a payload byte of slot B
     reboot();
     CHECK(is_edit(1)); // B fails its CRC: A is used
 
@@ -279,6 +302,7 @@ int main(void)
 
     test_fresh_flash_gives_defaults();
     test_edit_survives_reboot();
+    test_encoders_are_stored_too();
     test_same_value_is_not_an_edit();
     test_out_of_range();
     test_reset_stores_defaults();

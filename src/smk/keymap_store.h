@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "kbdef.h" // ENCODER_COUNT
 
 // The runtime-editable keymap: a RAM copy of every layer (KEYMAP_DYNAMIC_LAYERS of them),
 // persisted in two flash slots (A/B) of FLASH_KEYMAP_SECTORS sectors each.
@@ -15,12 +16,22 @@
 // Layers the build does not define must answer KC_TRANSPARENT.
 uint16_t keymap_default(uint8_t layer, uint8_t row, uint8_t col);
 
+#ifdef ENCODER_COUNT
+// Same for the encoders' rotation keycodes ({counter-clockwise, clockwise} per encoder and layer).
+uint16_t keymap_default_encoder(uint8_t layer, uint8_t encoder, bool clockwise);
+#endif
+
 void keymap_store_init(void);
 
 uint16_t keymap_store_get(uint8_t layer, uint8_t row, uint8_t col);
 
 // Changes the RAM copy and marks it dirty. False for a position that does not exist.
 bool keymap_store_set(uint8_t layer, uint8_t row, uint8_t col, uint16_t keycode);
+
+#ifdef ENCODER_COUNT
+uint16_t keymap_store_get_encoder(uint8_t layer, uint8_t encoder, bool clockwise);
+bool     keymap_store_set_encoder(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode);
+#endif
 
 // Back to the compiled-in keymap (dirty, so the next flush stores it).
 void keymap_store_reset(void);

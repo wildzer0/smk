@@ -29,6 +29,26 @@ uint8_t keymap_layer_count(void)
     return KEYMAP_DYNAMIC_LAYERS;
 }
 
+#ifdef ENCODER_COUNT
+extern const uint16_t encoder_map[][ENCODER_COUNT][2]; // the layout's defaults
+
+uint16_t keymap_default_encoder(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    return (layer < keymap_layers) ? encoder_map[layer][encoder][clockwise ? 1 : 0] : KC_TRANSPARENT;
+}
+
+uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    return keymap_store_get_encoder(layer, encoder, clockwise);
+}
+
+bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode)
+{
+    last_edit = tick_sweeps();
+    return keymap_store_set_encoder(layer, encoder, clockwise, keycode);
+}
+#endif
+
 void keymap_init(void)
 {
     keymap_store_init();
@@ -81,14 +101,23 @@ void keymap_reset(void) {}
 
 void keymap_task(void) {}
 
-#endif
-
 #ifdef ENCODER_COUNT
-// Not editable at runtime yet: read straight from the layout's table.
+// A fixed keymap: read straight from the layout's table.
 extern const uint16_t encoder_map[][ENCODER_COUNT][2];
 
 uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
 {
     return (layer < keymap_layers && encoder < ENCODER_COUNT) ? encoder_map[layer][encoder][clockwise ? 1 : 0] : KC_TRANSPARENT;
 }
+
+bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode)
+{
+    (void)layer;
+    (void)encoder;
+    (void)clockwise;
+    (void)keycode;
+    return false;
+}
+#endif
+
 #endif

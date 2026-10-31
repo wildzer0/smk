@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "kbdef.h"
 
 // Provided by the board's layout.c next to `keymaps`: how many layers it defines.
 extern const uint8_t keymap_layers;
@@ -19,3 +20,8 @@ void keymap_reset(void);
 
 // Writes pending edits to flash once the keyboard has been quiet for a while.
 void keymap_task(void);
+
+#ifdef ENCODER_COUNT
+// Edit one rotation keycode of an encoder (clockwise or counter-clockwise).
+bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode);
+#endif

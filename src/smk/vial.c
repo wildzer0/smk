@@ -1,6 +1,9 @@
 #include "vial.h"
 #include "timer.h"
 #include "matrix.h"
+#include "keymap.h"
+#include "layer.h"
+#include "kbdef.h"
 #include <string.h>
 
 #define UNLOCK_COUNTER_MAX 50u
@@ -69,6 +72,26 @@ void vial_receive(uint8_t *data, uint8_t length)
             }
             break;
         }
+
+#ifdef ENCODER_COUNT
+        // The GUI asks for both directions at once: counter-clockwise first, then clockwise (big-endian keycodes).
+        case vial_get_encoder: {
+            const bool valid = data[2] < keymap_layer_count() && data[3] < ENCODER_COUNT;
+            const uint16_t ccw = valid ? keymap_encoder_get(data[2], data[3], false) : 0;
+            const uint16_t cw  = valid ? keymap_encoder_get(data[2], data[3], true) : 0;
+
+            data[0] = (uint8_t)(ccw >> 8);
+            data[1] = (uint8_t)(ccw & 0xFFu);
+            data[2] = (uint8_t)(cw >> 8);
+            data[3] = (uint8_t)(cw & 0xFFu);
+            break;
+        }
+
+        // layer, encoder, direction (0 = counter-clockwise, 1 = clockwise), keycode
+        case vial_set_encoder:
+            keymap_encoder_set(data[2], data[3], data[4] != 0, (uint16_t)(((uint16_t)data[5] << 8) | data[6]));
+            break;
+#endif
 
         case vial_get_unlock_status:
             memset(data, 0xFF, length);

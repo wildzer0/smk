@@ -532,9 +532,9 @@ Solo per le schede con `keymap_sectors` (oggi la B68, 8 layer).
 
 * **RAM**: copia di tutti i layer (`KEYMAP_DYNAMIC_LAYERS × righe × colonne × 2 B`; B68: 1280 B). `keymap_get()` legge da
   qui, perciò la scansione dei tasti non tocca la flash.
-* **Flash**: due slot A/B da N settori. Formato di uno slot: intestazione di 10 B (`'K' 'M'`, versione, layer, righe,
-  colonne, sequenza a 16 bit, CRC-16/CCITT del payload) seguita dal payload (parole a 16 bit little-endian, riga per riga,
-  layer per layer).
+* **Flash**: due slot A/B da N settori. Formato di uno slot (versione 2): intestazione di 11 B (`'K' 'M'`, versione, layer, righe,
+  colonne, sequenza a 16 bit, CRC-16/CCITT del payload, numero di encoder) seguita dal payload (parole a 16 bit little-endian: prima
+  i tasti, riga per riga e layer per layer, poi gli encoder, `{antiorario, orario}` per encoder e layer).
 * **Salvataggio** (`keymap_store_flush`): cancella lo slot **non** in uso, scrive il payload, scrive l'intestazione **per
   ultima**. Fino a quel momento lo slot non è valido; al boot vince lo slot valido con la sequenza più recente (confronto
   con segno, quindi sicuro al wrap). Una caduta di tensione a metà lascia la keymap precedente.

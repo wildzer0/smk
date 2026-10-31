@@ -31,6 +31,9 @@ keyboards += {
             },
         },
         'options' : {
+            # Vial's desktop app only lists a keyboard whose USB serial number contains this string
+            # (vial.rocks probes the keyboard instead)
+            'serial' : 'vial:f64c2b3c',
             'keymap_sectors' : '3',  # 8 layers x 5 x 16 x 2 B + header = 1292 B per copy, two copies
             'vial_json' : 'vial.json',
             'vial_uid' : '0x46ecd0565df84fa8',

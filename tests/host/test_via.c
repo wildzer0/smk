@@ -36,6 +36,23 @@ uint8_t keymap_layer_count(void)
     return KEYMAP_DYNAMIC_LAYERS;
 }
 
+// encoders: [layer][encoder][ccw, cw]
+static uint16_t encoder_keys[KEYMAP_DYNAMIC_LAYERS][ENCODER_COUNT][2];
+
+uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    return encoder_keys[layer][encoder][clockwise ? 1 : 0];
+}
+
+bool keymap_encoder_set(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode)
+{
+    if (layer >= KEYMAP_DYNAMIC_LAYERS || encoder >= ENCODER_COUNT) {
+        return false;
+    }
+    encoder_keys[layer][encoder][clockwise ? 1 : 0] = keycode;
+    return true;
+}
+
 static bool    down[MATRIX_ROWS][MATRIX_COLS];
 static uint32_t now;
 
@@ -341,6 +358,27 @@ static void test_vial_extras(void)
     }
 }
 
+static void test_encoders(void)
+{
+    // set counter-clockwise then clockwise of encoder 0 on layer 2
+    SEND(0xFE, vial_set_encoder, 2, 0, 0, 0x00, 0xEA);
+    SEND(0xFE, vial_set_encoder, 2, 0, 1, 0x00, 0xE9);
+    CHECK(encoder_keys[2][0][0] == 0x00EA && encoder_keys[2][0][1] == 0x00E9);
+
+    // the reply to a read carries both: counter-clockwise first, big-endian
+    SEND(0xFE, vial_get_encoder, 2, 0);
+    CHECK(msg[0] == 0x00 && msg[1] == 0xEA && msg[2] == 0x00 && msg[3] == 0xE9);
+
+    // a layer or an encoder that does not exist answers zeros, and a write to it changes nothing
+    SEND(0xFE, vial_get_encoder, 9, 0);
+    CHECK(msg[0] == 0 && msg[1] == 0 && msg[2] == 0 && msg[3] == 0);
+    SEND(0xFE, vial_get_encoder, 0, 5);
+    CHECK(msg[0] == 0 && msg[1] == 0 && msg[2] == 0 && msg[3] == 0);
+    SEND(0xFE, vial_set_encoder, 9, 0, 1, 0xFF, 0xFF);
+    SEND(0xFE, vial_set_encoder, 0, 5, 1, 0xFF, 0xFF);
+    CHECK(encoder_keys[0][0][1] == 0);
+}
+
 static void test_wrong_length_is_ignored(void)
 {
     memset(msg, 0x55, sizeof msg);
@@ -363,6 +401,7 @@ int main(void)
     test_vial_definition_pages();
     test_unlock_flow();
     test_vial_extras();
+    test_encoders();
     test_wrong_length_is_ignored();
 
     printf("%d checks, %d failures\n", checks, failures);

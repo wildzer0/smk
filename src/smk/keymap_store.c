@@ -6,15 +6,23 @@
 #include "flash.h"
 
 #define LAYERS     KEYMAP_DYNAMIC_LAYERS
-#define WORDS      ((uint16_t)(LAYERS * MATRIX_ROWS * MATRIX_COLS))
+#define KEY_WORDS  ((uint16_t)(LAYERS * MATRIX_ROWS * MATRIX_COLS))
+#ifdef ENCODER_COUNT
+#    define ENCODERS      ENCODER_COUNT
+#    define ENCODER_WORDS ((uint16_t)(LAYERS * ENCODER_COUNT * 2))
+#else
+#    define ENCODERS      0
+#    define ENCODER_WORDS 0
+#endif
+#define WORDS      ((uint16_t)(KEY_WORDS + ENCODER_WORDS)) // keys first, then the encoders
 #define PAYLOAD    ((uint16_t)(WORDS * 2u))
-#define HEADER     12u // 10 bytes are written, the last two stay erased
+#define HEADER     12u // 11 bytes are written, the last one stays erased
 #define SLOT_BYTES ((uint16_t)(FLASH_KEYMAP_SECTORS * FLASH_KEYMAP_SECTOR_SIZE))
 #define CHUNK      ((uint16_t)64u)
 
 #define MAGIC0  'K'
 #define MAGIC1  'M'
-#define VERSION 1u
+#define VERSION 2u
 
 #define NO_SLOT 0xFFu
 
@@ -22,6 +30,9 @@ _Static_assert(LAYERS >= 1 && LAYERS <= 8, "the layer engine addresses at most 8
 _Static_assert((uint32_t)HEADER + PAYLOAD <= SLOT_BYTES, "the keymap does not fit in a slot: raise keymap_sectors");
 
 static __xdata uint16_t shadow[LAYERS][MATRIX_ROWS][MATRIX_COLS];
+#ifdef ENCODER_COUNT
+static __xdata uint16_t encoder_shadow[LAYERS][ENCODER_COUNT][2]; // [ccw, cw]
+#endif
 static __xdata uint8_t  chunk[CHUNK];
 
 static bool     dirty;
@@ -48,8 +59,14 @@ static uint16_t crc16_update(uint16_t crc, uint8_t byte)
     return crc;
 }
 
+// The payload as one run of words: the keys, then the encoders.
 static __xdata uint16_t *word_at(uint16_t index)
 {
+#ifdef ENCODER_COUNT
+    if (index >= KEY_WORDS) {
+        return &encoder_shadow[0][0][0] + (index - KEY_WORDS);
+    }
+#endif
     return &shadow[0][0][0] + index;
 }
 
@@ -61,6 +78,12 @@ static void load_defaults(void)
                 shadow[layer][row][col] = keymap_default(layer, row, col);
             }
         }
+#ifdef ENCODER_COUNT
+        for (uint8_t encoder = 0; encoder < ENCODER_COUNT; encoder++) {
+            encoder_shadow[layer][encoder][0] = keymap_default_encoder(layer, encoder, false);
+            encoder_shadow[layer][encoder][1] = keymap_default_encoder(layer, encoder, true);
+        }
+#endif
     }
 }
 
@@ -81,9 +104,9 @@ static uint16_t shadow_crc(void)
 // Reads the header of `slot`; true when it is a complete keymap of this build's shape.
 static bool slot_header(uint8_t slot)
 {
-    flash_read_into(FLASH_CODE, slot_addr(slot), chunk, 10);
+    flash_read_into(FLASH_CODE, slot_addr(slot), chunk, 11);
 
-    if (chunk[0] != MAGIC0 || chunk[1] != MAGIC1 || chunk[2] != VERSION || chunk[3] != LAYERS || chunk[4] != MATRIX_ROWS || chunk[5] != MATRIX_COLS) {
+    if (chunk[0] != MAGIC0 || chunk[1] != MAGIC1 || chunk[2] != VERSION || chunk[3] != LAYERS || chunk[4] != MATRIX_ROWS || chunk[5] != MATRIX_COLS || chunk[10] != ENCODERS) {
         return false;
     }
 
@@ -171,6 +194,27 @@ bool keymap_store_set(uint8_t layer, uint8_t row, uint8_t col, uint16_t keycode)
     return true;
 }
 
+#ifdef ENCODER_COUNT
+uint16_t keymap_store_get_encoder(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    return encoder_shadow[layer][encoder][clockwise ? 1 : 0];
+}
+
+bool keymap_store_set_encoder(uint8_t layer, uint8_t encoder, bool clockwise, uint16_t keycode)
+{
+    if (layer >= LAYERS || encoder >= ENCODER_COUNT) {
+        return false;
+    }
+
+    if (encoder_shadow[layer][encoder][clockwise ? 1 : 0] != keycode) {
+        encoder_shadow[layer][encoder][clockwise ? 1 : 0] = keycode;
+        dirty                                            = true;
+    }
+
+    return true;
+}
+#endif
+
 void keymap_store_reset(void)
 {
     load_defaults();
@@ -223,7 +267,8 @@ void keymap_store_flush(void)
     chunk[7]           = (uint8_t)(seq >> 8);
     chunk[8]           = (uint8_t)(crc & 0xFFu);
     chunk[9]           = (uint8_t)(crc >> 8);
-    flash_program_from(FLASH_CODE, base, chunk, 10);
+    chunk[10]          = ENCODERS;
+    flash_program_from(FLASH_CODE, base, chunk, 11);
 
     active_slot = target;
     active_seq  = seq;

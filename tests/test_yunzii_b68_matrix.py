@@ -252,6 +252,17 @@ def find_rawhid_firmware():
 RAWHID_FIRMWARE = find_rawhid_firmware()
 
 
+class TestB68VialIdentity(unittest.TestCase):
+    def test_serial_number_has_the_vial_magic(self):
+        """Vial's desktop app lists a keyboard only if its USB serial number string contains this."""
+        if not RAWHID_FIRMWARE:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+        from sim import read_intel_hex
+        mem = read_intel_hex(RAWHID_FIRMWARE)
+        image = bytes(mem.get(a, 0xFF) for a in range(max(mem) + 1))
+        self.assertIn(b"vial:f64c2b3c", image)
+
+
 class TestB68RawHid(unittest.TestCase):
     """VIA/Vial over the raw HID interface: a 32-byte packet in on EP2 OUT, the reply on EP2 IN."""
 
@@ -450,6 +461,27 @@ class TestB68TapHold(unittest.TestCase):
             kb.matrix.press(1, 0)  # c1r0 is 1 on the base layer and F1 on layer 1
             self.spin(kb, 700)
             self.assertEqual(self.typed(kb), [0x3A])  # F1
+        finally:
+            kb.close()
+
+
+class TestB68EncoderFromVial(TestB68TapHold):
+    """An encoder keycode assigned with Vial's 'set encoder' command is what a turn then sends."""
+
+    def turn(self, kb, cycle):
+        for a, b in cycle:
+            kb.cmd("set mem sfr 0x80 0x%02x" % (0x04 | (a << 6) | (b << 7)))
+            self.spin(kb, 80)
+
+    def test_assigned_keycode_is_sent(self):
+        kb = self.session()
+        try:
+            # layer 0, encoder 0, clockwise (1): KC_U
+            self.via(kb, [0xFE, 0x04, 0, 0, 1, 0x00, 0x18])
+            self.via(kb, [0xFE, 0x03, 0, 0])  # read both directions back
+            self.turn(kb, [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+            self.spin(kb, 300)
+            self.assertIn(0x18, [r[3] for r in kb.ep1_reports() if r[0] == 3])
         finally:
             kb.close()
 
