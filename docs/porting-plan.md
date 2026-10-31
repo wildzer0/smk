@@ -208,22 +208,6 @@ e **S3** (sorgenti Vial). **Piano B** se S1 fallisce: protocollo nostro via **fe
 WebHID (riusa lo stesso nucleo). Da verificare in S3: come Vial-GUI riconosce il dispositivo (numero di serie?),
 supporto di `menus`/UI custom in `vial.json`.
 
-### D9 — Configurazione "senza software" (idea in valutazione, NON decisa)
-
-Proposta (2026-10-31): un chord all'accensione fa comparire la tastiera come **memoria di massa**; si copia un file di
-configurazione e al power-cycle la tastiera usa la nuova configurazione. Analisi e confronto con le alternative
-(modifica dalla tastiera stessa, Vial via browser) in conversazione; riassunto:
-
-* **Fattibile in linea di principio**: il SIE del SH68F90A non ha un campo "tipo" per endpoint (`EPxCON` ha solo RDY/STL/DTG/
-  BUFSEL), quindi un endpoint bulk da 64 B in IN e OUT è EP2 (0x82 + 0x02), e come *modalità* separata non confligge con il
-  budget di endpoint (HID e MSC non coesistono: si riavvia in una o nell'altra).
-* **Costo**: stack MSC (BOT + SCSI) + FAT12 virtuale + parser/validatore, stimato 5–8 KB di flash; RAM per un settore da 512 B.
-* **Rischio principale**: non c'è spazio per un'immagine FAT reale (64 KiB di flash totali), quindi il volume va
-  *simulato* e il significato dei settori scritti dall'host va dedotto; gli editor che salvano "via file temporaneo +
-  rinomina" scrivono in cluster diversi.
-* **Gate**: lo spike S1 verifica già EP2 OUT a 64 B e il toggle dei dati; la stessa prova abilita o esclude l'MSC.
-* **Stato**: idea candidata a M7 (estensioni opzionali), dopo Vial. La decisione è dell'utente.
-
 ### D4 — Vial solo in USB
 
 Raw HID esiste solo quando il cavo è collegato (`conn_mode = USB`). In modalità RF la configurazione non è
