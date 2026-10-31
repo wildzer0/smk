@@ -75,3 +75,9 @@
 // layout) while plugging in to jump to the ISP bootloader. All three must stay down for ~60 ms.
 #define RECOVERY_CHORD_COUNT 3
 #define RECOVERY_CHORD_KEYS  { { 0u, 0u }, { 1u, 0u }, { 2u, 0u } }
+
+// Rotary encoder: A on P0.6, B on P0.7 (found with the probe layout). The pins are inputs with
+// pull-ups, and a detent is one full cycle of the two signals (4 pin changes).
+#define ENCODER_COUNT 1
+#define ENCODER_RESOLUTION 4
+#define ENCODER_READ_STATE(n) ((uint8_t)((P0 >> 6) & 0x03u))

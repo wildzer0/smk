@@ -7,6 +7,7 @@ src_smk += files(
     'layer.c',
     'keymap.c',
     'keymap_store.c',
+    'encoder.c',
     'report.c',
     'keyboard.c',
     'console.c',

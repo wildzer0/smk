@@ -19,6 +19,7 @@ Override the firmware with SMK_B68_FIRMWARE.
 """
 
 import os
+import re
 import unittest
 from pathlib import Path
 
@@ -233,6 +234,44 @@ class TestB68DefaultLayout(unittest.TestCase):
 
     def test_fn_layer_gives_f1(self):
         self.assertEqual(self.keys((1, 0), held=[(9, 4)])[2], 0x3A)  # Fn + c1r0 = F1
+
+
+class TestB68Encoder(unittest.TestCase):
+    """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
+
+    def volume_reports(self, cycle):
+        kb = Air60Sim(firmware=FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            read_rows = kb._a("user_matrix_read_rows")
+            kb.brk(read_rows)
+            for state in cycle:  # (A, B) levels, each held across a couple of timer ticks
+                # the simulator takes the level of the P0 input pins from the SFR itself (P0.2 is an output, kept high)
+                kb.cmd("set mem sfr 0x80 0x%02x" % (0x04 | (state[0] << 6) | (state[1] << 7)))
+                for _ in range(80):
+                    kb.run()
+                    kb.matrix.inject(kb)
+            for _ in range(200):  # let the main loop send what was counted
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.cmd("delete")
+            text = kb.stderr_text()
+        finally:
+            kb.close()
+        return [[int(x, 16) for x in m.split()]
+                for m in re.findall(r"\[SIE\] EP2 IN \d+ bytes:((?: [0-9a-f]{2})*)", text)]
+
+    # (A, B): 00 -> 10 -> 11 -> 01 -> 00 is the direction seen first on the board
+    FIRST_WAY = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]
+    OTHER_WAY = [(1, 1), (1, 0), (0, 0), (0, 1), (1, 1)]  # B falls first, as in the second half of the board capture
+
+    def test_first_way_is_volume_up(self):
+        self.assertIn([0x02, 0xE9, 0x00], self.volume_reports([(0, 0)] + self.FIRST_WAY))
+
+    def test_other_way_is_volume_down(self):
+        self.assertIn([0x02, 0xEA, 0x00], self.volume_reports([(1, 1)] + self.OTHER_WAY))
 
 
 RECOVERY_CHORD = [(0, 0), (1, 0), (2, 0)]  # RECOVERY_CHORD_KEYS in kbdef.h

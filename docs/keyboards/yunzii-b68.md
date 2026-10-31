@@ -105,6 +105,16 @@ Del, PgUp, PgDn (da confermare). La **rotazione** dell'encoder non fa parte dell
 verificato sul chip reale**: la tastiera compare come `0603:1020` ("Gaming KB", report 5 e 6 del bootloader stock). Lo
 sblocco Vial è Esc + Invio.
 
+## Encoder rotativo (probe v3, 2026-10-31)
+
+I contatti sono su **P0.6 (A) e P0.7 (B)**, ingressi con pull-up (P0.5–P0.7 sono le linee radio sulla Air60, qui no). Catturato
+girando la manopola: in un senso `p06=1 p07=1 p06=0 p07=0` (A sale, B sale, A scende, B scende), nell'altro
+`p07=0 p06=0 p07=1 p06=1` (B scende per primo): quadratura normale, quattro variazioni per ciclo. Il primo senso è
+trattato come orario. La pressione della manopola è `c15r0` (nella matrice). Il decoder è in `src/smk/encoder.c`, campionato
+a ogni tick del timer; il layout `default` mappa {antiorario, orario} = {Vol−, Vol+} sul livello base.
+
+Il testo della sonda si interrompeva dopo ~5 s perché la sonda scrive al massimo 60 eventi (`MAX_EVENTS`): non era un guasto.
+
 ## Hardware (M0.4)
 
 *Da compilare: foto PCB, pad ICP, pinout.*

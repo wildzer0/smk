@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "kbdef.h" // ENCODER_COUNT, when the board has an encoder
 
 // Layer engine: a bitmask of active layers on top of a default layer, the layer
 // keycodes (MO, TO, TG, DF, OSL) and one-shot modifiers (OSM).
@@ -16,6 +17,14 @@
 // Provided by the firmware (keymap.c) or by a test.
 uint16_t keymap_get(uint8_t layer, uint8_t row, uint8_t col);
 uint8_t  keymap_layer_count(void);
+
+#ifdef ENCODER_COUNT
+// Provided by the firmware (keymap.c) or by a test: the keycode of one rotation direction of an encoder on a layer.
+uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise);
+
+// The keycode for one step of an encoder, through the active layers.
+uint16_t layer_lookup_encoder(uint8_t encoder, bool clockwise);
+#endif
 
 // Provided by the caller: apply/remove modifier bits (HID modifier byte) on the host report.
 void layer_hook_mods_add(uint8_t mods);

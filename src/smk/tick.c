@@ -5,6 +5,7 @@
 #include "keyboard.h"
 #include "sleep.h"
 #include "timer.h"
+#include "encoder.h"
 #include "kbdef.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -48,6 +49,8 @@ static void run_led_subframe(void)
 
 void tick_dispatch(void)
 {
+    encoder_sample();
+
     if (scan_due) {
         scan_due             = false;
         subframes_since_scan = 0;

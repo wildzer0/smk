@@ -82,6 +82,12 @@ static void send_keycode(uint16_t qcode, bool pressed)
     }
 }
 
+void matrix_tap_keycode(uint16_t keycode)
+{
+    send_keycode(keycode, true);
+    send_keycode(keycode, false);
+}
+
 static void process_key_state(uint8_t row, uint8_t col, bool pressed)
 {
     const uint16_t qcode = pressed ? layer_key_down(row, col) : layer_key_up(row, col);

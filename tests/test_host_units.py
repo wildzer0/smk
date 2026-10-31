@@ -51,6 +51,12 @@ class TestVia(unittest.TestCase):
                       extra_flags=("-D__xdata=", "-D__code="))
 
 
+class TestEncoder(unittest.TestCase):
+    def test_encoder(self):
+        build_and_run(self, "tests/host/test_encoder.c", "src/smk/encoder.c",
+                      extra_flags=("-D__code=", "-D__critical="))
+
+
 class TestTimer(unittest.TestCase):
     def test_timer(self):
         build_and_run(self, "tests/host/test_timer.c", "src/smk/timer.c")

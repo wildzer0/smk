@@ -100,6 +100,25 @@ uint16_t layer_key_up(uint8_t row, uint8_t col)
     return keycode;
 }
 
+#ifdef ENCODER_COUNT
+uint16_t layer_lookup_encoder(uint8_t encoder, bool clockwise)
+{
+    for (uint8_t layer = LAYER_MAX; layer-- > 0;) {
+        if (!(layer_state & (uint8_t)(1u << layer)) || !layer_valid(layer)) {
+            continue;
+        }
+
+        const uint16_t keycode = keymap_encoder_get(layer, encoder, clockwise);
+        if (keycode != KC_TRANSPARENT) {
+            return keycode;
+        }
+    }
+
+    const uint16_t keycode = keymap_encoder_get(default_layer, encoder, clockwise);
+    return (keycode == KC_TRANSPARENT) ? KC_NO : keycode;
+}
+#endif
+
 // QMK encodes OSM as a 5-bit mask: the low 4 bits pick the modifiers, bit 4 moves them to the right hand.
 static uint8_t osm_mods(uint16_t keycode)
 {

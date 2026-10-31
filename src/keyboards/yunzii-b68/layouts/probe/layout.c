@@ -37,6 +37,9 @@ const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     }
 };
 
+// The encoder is what the probe is looking at: its steps are not mapped to anything here.
+const uint16_t encoder_map[][ENCODER_COUNT][2] = { [_BL] = { { KC_NO, KC_NO } } };
+
 const uint8_t keymap_layers = sizeof(keymaps) / sizeof(keymaps[0]);
 
 // clang-format on

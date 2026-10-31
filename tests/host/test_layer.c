@@ -26,6 +26,15 @@ uint8_t keymap_layer_count(void)
     return layers;
 }
 
+// encoder map: per layer { counter-clockwise, clockwise }
+static const uint16_t encoder_map[4][2] = { { KC_VOLD, KC_VOLU }, { T, T }, { KC_LEFT, T }, { KC_PGUP, KC_PGDN } };
+
+uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    (void)encoder;
+    return encoder_map[layer][clockwise ? 1 : 0];
+}
+
 static uint8_t mods;
 
 void layer_hook_mods_add(uint8_t m)
@@ -229,8 +238,27 @@ static void test_osm_right_hand(void)
     CHECK(mods == 0);
 }
 
+static void test_encoder_lookup(void)
+{
+    reset();
+    CHECK(layer_lookup_encoder(0, true) == KC_VOLU);
+    CHECK(layer_lookup_encoder(0, false) == KC_VOLD);
+
+    layer_process(MO(1), true); // layer 1 is all transparent: the default layer answers
+    CHECK(layer_lookup_encoder(0, true) == KC_VOLU);
+    layer_process(MO(2), true); // layer 2: CCW is its own, CW falls through
+    CHECK(layer_lookup_encoder(0, false) == KC_LEFT);
+    CHECK(layer_lookup_encoder(0, true) == KC_VOLU);
+    layer_process(MO(2), false);
+    layer_process(MO(1), false);
+
+    layer_process(TG(3), true);
+    CHECK(layer_lookup_encoder(0, true) == KC_PGDN);
+}
+
 int main(void)
 {
+    test_encoder_lookup();
     test_base_and_transparent();
     test_momentary();
     test_release_uses_press_time_keycode();

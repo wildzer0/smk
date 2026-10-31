@@ -82,3 +82,13 @@ void keymap_reset(void) {}
 void keymap_task(void) {}
 
 #endif
+
+#ifdef ENCODER_COUNT
+// Not editable at runtime yet: read straight from the layout's table.
+extern const uint16_t encoder_map[][ENCODER_COUNT][2];
+
+uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
+{
+    return (layer < keymap_layers && encoder < ENCODER_COUNT) ? encoder_map[layer][encoder][clockwise ? 1 : 0] : KC_TRANSPARENT;
+}
+#endif
