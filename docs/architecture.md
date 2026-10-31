@@ -237,6 +237,11 @@ bootloader_addr = 65536 - 4096      = 0xF000
 marker_addr     = 0xF000 - 512      = 0xEE00
 settings_addr   = marker_addr - 512 = 0xEC00        (solo se settings_store == 'flash')
 --code-size 0xEC00 = 60416 B         -DFLASH_CFG_ADDR=0xEC00u  -DFLASH_CFG_SIZE=512u
+
+Se la scheda ha l'opzione `keymap_sectors = N` (keymap modificabile a runtime), sotto le impostazioni si riservano
+due copie A/B da N settori ciascuna:
+keymap_addr     = settings_addr - 2·N·512                 (B68, N = 3: 0xE000)
+--code-size 0xE000 = 57344 B         -DFLASH_KEYMAP_ADDR=0xE000u  -DFLASH_KEYMAP_SECTORS=3u
 ```
 
 **Nota per VIAL:** oggi esiste *un solo* settore di settings. Per la keymap dinamica servono più settori:
@@ -520,6 +525,24 @@ semantica da scoprire (`compute_byte9`: 0 su Mac-mode o a tasti premuti); superv
 costanti `__code`) legge la data flash anziché il codice: un'ISR in quella finestra leggerebbe spazzatura.
 
 ---
+
+### 11.x Keymap modificabile (`keymap_store.c`)
+
+Solo per le schede con `keymap_sectors` (oggi la B68, 8 layer).
+
+* **RAM**: copia di tutti i layer (`KEYMAP_DYNAMIC_LAYERS × righe × colonne × 2 B`; B68: 1280 B). `keymap_get()` legge da
+  qui, perciò la scansione dei tasti non tocca la flash.
+* **Flash**: due slot A/B da N settori. Formato di uno slot: intestazione di 10 B (`'K' 'M'`, versione, layer, righe,
+  colonne, sequenza a 16 bit, CRC-16/CCITT del payload) seguita dal payload (parole a 16 bit little-endian, riga per riga,
+  layer per layer).
+* **Salvataggio** (`keymap_store_flush`): cancella lo slot **non** in uso, scrive il payload, scrive l'intestazione **per
+  ultima**. Fino a quel momento lo slot non è valido; al boot vince lo slot valido con la sequenza più recente (confronto
+  con segno, quindi sicuro al wrap). Una caduta di tensione a metà lascia la keymap precedente.
+* **Quando si scrive** (`keymap_task`): dopo ~2000 scansioni senza modifiche e con nessun tasto premuto, mai durante la
+  digitazione. `tick_sweeps()` è il contatore di scansioni (non è ancora un orologio in ms: vedi M4.19b).
+* **Default**: se nessuno slot è valido si usa la keymap compilata (`keymap_default`), senza scrivere nulla in flash.
+* Il riflash dell'applicazione cancella la keymap salvata (come le impostazioni).
+
 
 ## 12. Indicatori / retroilluminazione
 

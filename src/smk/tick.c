@@ -15,17 +15,20 @@
 
 static volatile bool    scan_due;
 static volatile uint8_t subframes_since_scan;
+static volatile uint16_t sweeps;
 
 void tick_init(void)
 {
     scan_due             = true;
     subframes_since_scan = 0;
+    sweeps               = 0;
 
     systick_init();
 }
 
 static void run_matrix_scan(void)
 {
+    sweeps++;
     systick_arm(SYSTICK_SLOT_MATRIX_SCAN);
     matrix_scan_full();
 }
@@ -65,4 +68,18 @@ void tick_pause(void)
 void tick_resume(void)
 {
     systick_resume();
+}
+
+uint16_t tick_sweeps(void)
+{
+    uint16_t a;
+    uint16_t b;
+
+    // 16 bits are not read atomically: take two readings until they agree
+    do {
+        a = sweeps;
+        b = sweeps;
+    } while (a != b);
+
+    return a;
 }

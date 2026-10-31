@@ -6,6 +6,7 @@ src_smk += files(
     'matrix.c',
     'layer.c',
     'keymap.c',
+    'keymap_store.c',
     'report.c',
     'keyboard.c',
     'console.c',

@@ -134,6 +134,18 @@ void matrix_scan_full(void)
     matrix_updated = true;
 }
 
+// True while any key is down, as of the last pass of matrix_task().
+bool matrix_any_pressed(void)
+{
+    for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+        if (matrix_previous[col]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 uint8_t matrix_task()
 {
     if (!matrix_updated) {

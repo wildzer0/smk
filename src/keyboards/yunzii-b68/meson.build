@@ -17,6 +17,8 @@ keyboards += {
                 'src' : files('layouts/default/layout.c'),
             },
         },
-        'options' : {},
+        'options' : {
+            'keymap_sectors' : '3',  # 8 layers x 5 x 16 x 2 B + header = 1292 B per copy, two copies
+        },
     },
 }

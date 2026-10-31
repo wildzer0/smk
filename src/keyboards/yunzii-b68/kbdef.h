@@ -15,6 +15,10 @@
 #define MATRIX_ROWS 5
 #define MATRIX_COLS 16
 
+// The keymap is editable at runtime: 8 layers kept in RAM and stored in flash (the
+// `keymap_sectors` option in meson.build reserves the room; keymap_store.c checks it fits).
+#define KEYMAP_DYNAMIC_LAYERS 8
+
 // Row Pin Bits
 #define KB_R0_P7_1 _P7_1
 #define KB_R1_P7_2 _P7_2

@@ -15,6 +15,7 @@
 #include "indicators.h"
 #include "kb.h"
 #include "settings.h"
+#include "keymap.h"
 #include "tick.h"
 #include "sleep.h"
 #include "diag.h"
@@ -39,6 +40,7 @@ void init(void)
     recovery_check();
 
     matrix_init();
+    keymap_init();
     keyboard_init();
     usb_init();
     indicators_init();
@@ -106,6 +108,7 @@ void main(void)
 
         usb_task();
         settings_task();
+        keymap_task();
         sleep_task();
 
 #if DEBUG == 1

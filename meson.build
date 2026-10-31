@@ -168,9 +168,24 @@ foreach keyboard, board : keyboards
 
     if spec['settings_store'] == 'flash'
         settings_addr = marker_addr - spec['sector_size']
+        code_limit = settings_addr
+
+        # A board with a runtime-editable keymap reserves two copies (A/B) of
+        # `keymap_sectors` sectors just below the settings sector.
+        if options.has_key('keymap_sectors')
+            keymap_sectors = options['keymap_sectors'].to_int()
+            keymap_addr = settings_addr - 2 * keymap_sectors * spec['sector_size']
+            code_limit = keymap_addr
+            platform_cc_args += [
+                '-DFLASH_KEYMAP_ADDR=@0@u'.format(keymap_addr),
+                '-DFLASH_KEYMAP_SECTORS=@0@u'.format(keymap_sectors),
+                '-DFLASH_KEYMAP_SECTOR_SIZE=@0@u'.format(spec['sector_size']),
+            ]
+        endif
+
         platform_cc_args += [
             '--code-size',
-            '@0@'.format(settings_addr),
+            '@0@'.format(code_limit),
             '-DFLASH_CFG_ADDR=@0@u'.format(settings_addr),
             '-DFLASH_CFG_SIZE=@0@u'.format(spec['sector_size']),
             '-DFLASH_MARKER_ADDR=@0@u'.format(marker_addr),
