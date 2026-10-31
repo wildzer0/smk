@@ -472,6 +472,15 @@ class TestB68MacroFromTheStore(TestB68TapHold):
                 crc = ((crc << 1) ^ 0x1021) & 0xFFFF if crc & 0x8000 else (crc << 1) & 0xFFFF
         return crc
 
+    def defaults_print(self):
+        """The fingerprint of the compiled-in keymap, as the firmware computes it at boot."""
+        kb = Air60Sim(firmware=RAWHID_FIRMWARE)
+        try:
+            kb.boot(usb=True)
+            return int.from_bytes(bytes(kb.get_xram(kb.sym["defaults_print"], 2)), "little")
+        finally:
+            kb.close()
+
     def slot(self, macro, cell_keycodes):
         layers, rows, cols = 8, 5, 16
         keys = [0] * (layers * rows * cols)
@@ -480,9 +489,11 @@ class TestB68MacroFromTheStore(TestB68TapHold):
         payload = b"".join(w.to_bytes(2, "little") for w in keys)
         payload += b"".join(w.to_bytes(2, "little") for w in [0] * (layers * 1 * 2))  # one encoder
         payload += macro.ljust(512, b"\0")
+        payload += bytes(8 * 5 * 2)  # eight tap dances
         crc = self.crc16(payload)
-        header = bytes([ord("K"), ord("M"), 3, layers, rows, cols, 1, 0, crc & 0xFF, crc >> 8, 1, 512 // 8, 0xFF][:12])
-        return header + b"\xff" * (12 - len(header)) + payload if len(header) < 12 else header + payload
+        print_ = self.defaults_print()
+        header = bytes([ord("K"), ord("M"), 4, layers, rows, cols, 1, 0, crc & 0xFF, crc >> 8, 1, 512 // 8, print_ & 0xFF, print_ >> 8])
+        return header + payload
 
     def session_with_slot(self, slot):
         if not RAWHID_FIRMWARE:

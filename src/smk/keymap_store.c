@@ -65,7 +65,7 @@ static uint16_t header_crc;
 
 // Fingerprint of the compiled-in keymap (keys and encoder), kept in the header: a copy saved by a firmware whose default keymap
 // was different (a new key on the Fn layer, say) is not used, because it would hide what the new firmware adds.
-static uint16_t defaults_print;
+uint16_t defaults_print; // not static so a simulator test can read it
 
 static uint16_t slot_addr(uint8_t slot)
 {
