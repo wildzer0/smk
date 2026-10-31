@@ -64,6 +64,97 @@ typedef enum {
     EP0_OUT_CONSOLE,
 } ep0_out_target_t;
 
+#ifdef RAW_HID_ENABLE
+// Interface 0 carries everything the keyboard sends or is sent, so that interface 1 can be the raw HID
+// pipe without report IDs. Every report has an ID; in boot protocol (a BIOS) the keyboard report goes out
+// without it, as the boot protocol defines.
+const uint8_t hid_report_desc_keyboard[] = {
+    // clang-format off
+    HID_RI_USAGE_PAGE(8, 0x01),     // Generic Desktop Controls
+    HID_RI_USAGE(8, 0x06),          // Keyboard
+    HID_RI_COLLECTION(8, 0x01),     // Application
+        HID_RI_REPORT_ID(8, REPORT_ID_KEYBOARD),
+        HID_RI_USAGE_PAGE(8, 0x07),     // Keyboard/Keypad
+        HID_RI_USAGE_MINIMUM(8, 0xe0),  // Keyboard Left Control
+        HID_RI_USAGE_MAXIMUM(8, 0xe7),  // Keyboard Right Gui
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(8, 0x01),
+        HID_RI_REPORT_SIZE(8, 0x01),
+        HID_RI_REPORT_COUNT(8, 0x08),
+        HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+
+        HID_RI_REPORT_SIZE(8, 0x08),
+        HID_RI_REPORT_COUNT(8, 0x01),
+        HID_RI_INPUT(8, HID_IOF_CONSTANT),
+
+        HID_RI_USAGE_PAGE(8, 0x07),    // Keyboard/Keypad
+        HID_RI_USAGE_MINIMUM(8, 0x00),
+        HID_RI_USAGE_MAXIMUM(8, 0xFF),
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(16, 0x00FF),
+        HID_RI_REPORT_SIZE(8, 0x08),
+        HID_RI_REPORT_COUNT(8, 0x06),
+        HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_ARRAY | HID_IOF_ABSOLUTE),
+
+        HID_RI_USAGE_PAGE(8, 0x08),    // LED
+        HID_RI_USAGE_MINIMUM(8, 0x01), // Num Lock
+        HID_RI_USAGE_MAXIMUM(8, 0x05), // Kana
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(8, 0x01),
+        HID_RI_REPORT_SIZE(8, 0x01),
+        HID_RI_REPORT_COUNT(8, 0x05),
+        HID_RI_OUTPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE | HID_IOF_NON_VOLATILE),
+
+        HID_RI_REPORT_SIZE(8, 0x03),
+        HID_RI_REPORT_COUNT(8, 0x01),
+        HID_RI_OUTPUT(8, HID_IOF_CONSTANT),
+    HID_RI_END_COLLECTION(0),
+
+    HID_RI_USAGE_PAGE(8, 0x01),           // Generic Desktop
+    HID_RI_USAGE(8, 0x80),                // System Control
+    HID_RI_COLLECTION(8, 0x01),           // Application
+        HID_RI_REPORT_ID(8, REPORT_ID_SYSTEM),
+        HID_RI_USAGE_MINIMUM(8, 0x81),
+        HID_RI_USAGE_MAXIMUM(8, 0x83),
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(8, 0x01),
+        HID_RI_REPORT_SIZE(8, 1),
+        HID_RI_REPORT_COUNT(8, 3),
+        HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+        HID_RI_REPORT_COUNT(8, 5),
+        HID_RI_INPUT(8, HID_IOF_CONSTANT | HID_IOF_ARRAY | HID_IOF_ABSOLUTE),
+    HID_RI_END_COLLECTION(0),
+
+    HID_RI_USAGE_PAGE(8, 0x0c),           // Consumer
+    HID_RI_USAGE(8, 0x01),                // Consumer Control
+    HID_RI_COLLECTION(8, 0x01),           // Application
+        HID_RI_REPORT_ID(8, REPORT_ID_CONSUMER),
+        HID_RI_USAGE_MINIMUM(8, 0x00),
+        HID_RI_USAGE_MAXIMUM(16, 0x023c),
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(16, 0x023c),
+        HID_RI_REPORT_SIZE(8, 16),
+        HID_RI_REPORT_COUNT(8, 1),
+        HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_ARRAY | HID_IOF_ABSOLUTE),
+    HID_RI_END_COLLECTION(0),
+
+#ifdef ISP_ENABLE
+    HID_RI_USAGE_PAGE(16, 0xff00),        // Vendor
+    HID_RI_USAGE(8, 0x01),                // Vendor
+    HID_RI_COLLECTION(8, 0x01),           // Application
+        HID_RI_REPORT_ID(8, REPORT_ID_ISP),
+        HID_RI_USAGE_MINIMUM(8, 0x01),
+        HID_RI_USAGE_MAXIMUM(8, 0x02),
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(16, 0x00ff),
+        HID_RI_REPORT_SIZE(8, 8),
+        HID_RI_REPORT_COUNT(8, 5),
+        HID_RI_FEATURE(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+    HID_RI_END_COLLECTION(0),
+#endif
+    // clang-format on
+};
+#else
 const uint8_t hid_report_desc_keyboard[] = {
     // clang-format off
     HID_RI_USAGE_PAGE(8, 0x01),     // Generic Desktop Controls
@@ -111,6 +202,7 @@ const uint8_t hid_report_desc_keyboard[] = {
     HID_RI_END_COLLECTION(0),
     // clang-format on
 };
+#endif // RAW_HID_ENABLE
 
 #ifdef RAW_HID_ENABLE
 // Raw HID, as VIA and Vial expect it: usage page 0xFF60, usage 0x61, one 32-byte input report and one
@@ -438,7 +530,11 @@ static void usb_reset_state(void)
     usb_device_state     = USB_DEVICE_STATE_DEFAULT;
     received_usb_addr    = 0;
     active_configuration = 0;
-    interface0_protocol  = 0;
+#ifdef RAW_HID_ENABLE
+    interface0_protocol = USB_PROTOCOL_REPORT; // reports carry IDs here, and a device starts in report protocol
+#else
+    interface0_protocol = 0;
+#endif
     interface1_protocol  = 0;
     usb_remote_wakeup    = 0;
     usb_suspended        = 0;
@@ -471,6 +567,18 @@ void usb_send_report(__xdata report_keyboard_t *report)
     if (!usb_is_configured()) {
         return;
     }
+#ifdef RAW_HID_ENABLE
+    if (interface0_protocol == USB_PROTOCOL_REPORT) {
+        static __xdata uint8_t with_id[1 + KEYBOARD_REPORT_SIZE];
+
+        with_id[0] = REPORT_ID_KEYBOARD;
+        for (uint8_t i = 0; i < KEYBOARD_REPORT_SIZE; i++) {
+            with_id[1 + i] = report->raw[i];
+        }
+        usb_hw_ep1_in_send(with_id, sizeof(with_id));
+        return;
+    }
+#endif
     usb_hw_ep1_in_send(report->raw, KEYBOARD_REPORT_SIZE);
 }
 
@@ -489,7 +597,10 @@ void usb_send_nkro(__xdata report_nkro_t *report)
 void usb_send_extra(__xdata report_extra_t *report)
 {
 #ifdef RAW_HID_ENABLE
-    (void)report; // no home for media keys yet: they move to interface 0 in the next step
+    if (!usb_is_configured()) {
+        return;
+    }
+    usb_hw_ep1_in_send(report->raw, EXTRA_REPORT_SIZE); // media and system keys share EP1 with the keyboard
 #else
     if (!usb_is_configured()) {
         return;
@@ -687,7 +798,7 @@ static void usb_ep0_out_irq(void)
 
         switch (ep0_out_target) {
             case EP0_OUT_LED:
-                keyboard_set_led_state(EP0_OUT_BUF[0]);
+                keyboard_set_led_state(EP0_OUT_BUF[ep0_out_len ? ep0_out_len - 1 : 0]); // the LED byte is last
                 break;
 
 #ifdef ISP_ENABLE
@@ -1233,12 +1344,21 @@ static void usb_hid_set_report_handler(struct usb_req_setup *req)
 
     (void)report_id;
 
+#ifdef RAW_HID_ENABLE
+    // the ISP report lives on interface 0 here, and the LED report arrives with its ID in report protocol
+    if (report_type == REPORT_TYPE_OUTPUT && iface == 0 && (req->wLength == 1 || req->wLength == 2)) {
+#else
     if (report_type == REPORT_TYPE_OUTPUT && iface == 0 && req->wLength == 1) {
+#endif
         ep0_receive(EP0_OUT_LED, req->wLength);
         return;
     }
 
+#ifdef RAW_HID_ENABLE
+    if (report_type == REPORT_TYPE_FEATURE && iface == 0) {
+#else
     if (report_type == REPORT_TYPE_FEATURE && iface == 1) {
+#endif
 #ifdef ISP_ENABLE
         if (report_id == REPORT_ID_ISP) {
             ep0_receive(EP0_OUT_ISP, req->wLength);

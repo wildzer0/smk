@@ -17,6 +17,7 @@
 enum report_id {
     REPORT_ID_SYSTEM   = 1,
     REPORT_ID_CONSUMER = 2,
+    REPORT_ID_KEYBOARD = 3, // only on interface 0 of a RAW_HID_ENABLE build, where every report there has an ID
     REPORT_ID_ISP      = 5,
     REPORT_ID_NKRO     = 6,
     REPORT_ID_CONSOLE  = 7,

@@ -115,3 +115,21 @@ Per tornare indietro: chord Esc + 1 + 2 mentre colleghi l'USB, poi `sinowisp wri
 
 Se S1.2 non trova la tastiera o S1.3 non risponde, dimmelo con cosa vedi in `Gestione dispositivi` (o `lsusb -v`): è il dato che
 decide il piano B.
+
+## Spike S1 superato: tutto su interfaccia 0 (build `yunzii-b68_rawhid_smk.hex`, 2026-10-31)
+
+S1 è passato (la tastiera compare, VIA/Vial rispondono). La build `rawhid` ora è completa: **interfaccia 0** (EP1) porta tastiera,
+tasti multimediali/di sistema e il report ISP, tutti con report ID; **interfaccia 1** (EP2) è il raw HID. Quindi tornano
+Vol+/Vol− dell'encoder e i tasti Fn+freccia, e si rientra in ISP dall'applicazione.
+
+| Cosa cambia | Dettaglio |
+| --- | --- |
+| Tastiera | in report protocol il report ha un ID (3), in boot protocol (BIOS) nessun ID |
+| Media e sistema | report ID 2 e 1 su EP1 (prima EP2) |
+| ISP | feature report 5 sull'**interfaccia 0**. `sinowisp` da questa build: aggiungi `--isp_iface_num 0` |
+| LED (Bloc Maiusc ecc.) | l'host manda `[ID, leds]`, il firmware prende l'ultimo byte |
+| Persi in questa build | NKRO (solo 6KRO via cavo), console di debug |
+
+**Da provare dopo il flash:** digitare normalmente, Fn + numero, **encoder (volume)**, Fn + Su/Giù, LED di Bloc Maiusc, e il
+rientro in ISP dall'applicazione: `.\sinowisp.exe write --platform sh68f90 --vendor_id 0x258a --product_id 0xdead --isp_iface_num 0 --format ihex -f <hex>`
+(l'ultimo punto prova il report ISP spostato; se non funziona, il chord Esc + 1 + 2 resta il rimedio).

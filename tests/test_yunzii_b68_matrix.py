@@ -195,10 +195,12 @@ class TestB68ProbeLayout(unittest.TestCase):
 class TestB68DefaultLayout(unittest.TestCase):
     """The shipped layout: cells found with the probe, keycodes of a 65% ANSI board."""
 
+    FIRMWARE_UNDER_TEST = None  # a subclass can run the same checks on another build
+
     def keys(self, *cells, held=()):
         """The last keyboard report after pressing `cells`, with `held` already down for a few scans
         (a key pressed in the same scan as Fn would be read before Fn, in column order)."""
-        kb = Air60Sim(firmware=FIRMWARE)
+        kb = Air60Sim(firmware=self.FIRMWARE_UNDER_TEST or FIRMWARE)
         kb.matrix = B68KeyMatrix()
         try:
             kb.boot(usb=True)
@@ -217,7 +219,10 @@ class TestB68DefaultLayout(unittest.TestCase):
             reports = kb.scan_for_report(max_hits=600)
         finally:
             kb.close()
-        return reports[-1]
+        return self.normalize(reports[-1])
+
+    def normalize(self, report):
+        return report
 
     def test_letter(self):
         self.assertEqual(self.keys((1, 1))[2], 0x14)  # c1r1 = Q
@@ -312,6 +317,72 @@ class TestB68RawHid(unittest.TestCase):
         replies = self.exchange([0x01], [0x11])
         self.assertEqual(replies[0][:3], [0x01, 0x00, 0x09])
         self.assertEqual(replies[1][:2], [0x11, 8])  # eight layers
+
+
+class TestB68RawHidBuildKeys(TestB68DefaultLayout):
+    """The raw HID build types and switches layers exactly like the default one."""
+
+    FIRMWARE_UNDER_TEST = RAWHID_FIRMWARE
+
+    def normalize(self, report):
+        # interface 0 reports carry their ID here: [3, mods, reserved, keys...]
+        self.assertEqual(report[0], 3)
+        return report[1:]
+
+    def setUp(self):
+        if not RAWHID_FIRMWARE:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+
+
+class TestB68RawHidBuildInterface0(unittest.TestCase):
+    """What interface 0 sends in the raw HID build: IDs in report protocol, none in boot protocol,
+    and the media keys that used to go out on EP2."""
+
+    def run_keys(self, cells, boot_protocol=False):
+        if not RAWHID_FIRMWARE:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+        kb = Air60Sim(firmware=RAWHID_FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            if boot_protocol:
+                kb.cmd("set mem xram 0x%x 0x00" % kb.sym["interface0_protocol"])
+            for col, row in cells:
+                kb.matrix.press(col, row)
+            reports = kb.scan_for_report(max_hits=600)
+        finally:
+            kb.close()
+        return reports
+
+    def test_report_protocol_has_the_id(self):
+        self.assertEqual(self.run_keys([(1, 1)])[-1], [3, 0, 0, 0x14, 0, 0, 0, 0, 0])  # Q
+
+    def test_boot_protocol_has_no_id(self):
+        self.assertEqual(self.run_keys([(1, 1)], boot_protocol=True)[-1], [0, 0, 0x14, 0, 0, 0, 0, 0])
+
+    def test_media_key_goes_out_on_ep1_with_its_id(self):
+        # Fn + the arrow-down key is volume down on the Fn layer
+        kb = Air60Sim(firmware=RAWHID_FIRMWARE) if RAWHID_FIRMWARE else None
+        if not kb:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            kb.matrix.press(9, 4)  # Fn
+            read_rows = kb._a("user_matrix_read_rows")
+            kb.brk(read_rows)
+            for _ in range(200):
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.cmd("delete")
+            kb.matrix.press(14, 4)  # Down: volume down
+            kb.scan_for_report(max_hits=600)
+            reports = kb.ep1_reports()
+        finally:
+            kb.close()
+        self.assertIn([2, 0xEA, 0x00], reports)  # consumer report ID 2, usage 0x00EA (volume down)
 
 
 class TestB68Encoder(unittest.TestCase):
