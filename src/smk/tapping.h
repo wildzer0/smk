@@ -2,9 +2,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "kbdef.h" // KEYMAP_TAP_DANCE_COUNT
 
 // Tap-or-hold keys: LT(layer, kc) and MT(mods, kc). Tapped, the key sends `kc`; held longer than
 // TAPPING_TERM it switches the layer on or holds the modifiers.
+//
+// With KEYMAP_TAP_DANCE_COUNT, TD(n) keys do the same with the five words of tap dance n (keymap_store_tap_dance_get): a tap sends
+// "on tap", a hold longer than the term holds "on hold" (or "on tap" if that is empty), and when "on double tap" is set a second tap
+// within the term sends it instead (a single tap then waits one term to be sure).
 //
 // While such a key is undecided, the key events that follow are kept in a small queue and replayed once
 // it is decided, so a key typed during the wait lands on the right layer (QMK does the same). No
@@ -39,3 +44,6 @@ void tapping_hook_replay(uint8_t row, uint8_t col, bool pressed);    // feed a q
 void tapping_hook_tap(uint8_t basic_keycode);                        // press and release a key
 void tapping_hook_mods(uint8_t mods, bool on);                       // hold / release HID modifier bits
 void tapping_hook_layer(uint8_t layer, bool on);                     // layer on / off while the key is held
+#ifdef KEYMAP_TAP_DANCE_COUNT
+void tapping_hook_keycode(uint16_t keycode, bool pressed);           // any keycode, as if a key of the keymap had it (tap dances)
+#endif

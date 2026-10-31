@@ -93,6 +93,7 @@ void matrix_tap_keycode(uint16_t keycode)
 }
 
 static void process_key_state(uint8_t row, uint8_t col, bool pressed);
+static void run_keycode(uint16_t qcode, bool pressed);
 
 #ifdef KEYMAP_MACRO_BYTES
 void macro_hook_press(uint16_t keycode)
@@ -128,6 +129,13 @@ void tapping_hook_tap(uint8_t basic_keycode)
     layer_key_released();
 }
 
+#ifdef KEYMAP_TAP_DANCE_COUNT
+void tapping_hook_keycode(uint16_t keycode, bool pressed)
+{
+    run_keycode(keycode, pressed);
+}
+#endif
+
 void tapping_hook_mods(uint8_t mods, bool on)
 {
     if (on) {
@@ -154,6 +162,12 @@ static void process_key_state(uint8_t row, uint8_t col, bool pressed)
         return; // a tap-or-hold key starts waiting, or lets go after becoming a hold
     }
 
+    run_keycode(qcode, pressed);
+}
+
+// A keycode going down or up, from a key of the keymap or from a tap dance
+static void run_keycode(uint16_t qcode, bool pressed)
+{
     if (layer_process(qcode, pressed)) {
         return;
     }

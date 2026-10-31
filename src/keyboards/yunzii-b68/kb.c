@@ -26,6 +26,7 @@ extern void indicators_brightness_up();
 extern void indicators_brightness_down();
 extern void indicators_speed_up();
 extern void indicators_speed_down();
+extern void indicators_toggle_test(uint8_t bit);
 
 // The board's custom keys are not sent to the host.
 bool kb_process_record(uint16_t keycode, bool key_pressed)
@@ -66,6 +67,13 @@ bool kb_process_record(uint16_t keycode, bool key_pressed)
         case B68_SPD_UP:
             if (key_pressed) {
                 indicators_speed_up();
+            }
+            return false;
+        case B68_LED_T1:
+        case B68_LED_T2:
+        case B68_LED_T3:
+            if (key_pressed) {
+                indicators_toggle_test((uint8_t)(keycode - B68_LED_T1));
             }
             return false;
         default:

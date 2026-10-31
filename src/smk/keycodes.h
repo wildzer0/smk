@@ -1382,6 +1382,7 @@ enum keycode_aliases {
 
 // Momentary switch layer - 32 layer max
 #define MO(layer) (QK_MOMENTARY | ((layer)&0x1F))
+#define TD(n) (QK_TAP_DANCE | ((n)&0xFF))
 #define QK_MOMENTARY_GET_LAYER(kc) ((kc)&0x1F)
 
 // Switch to a layer and turn every other one off

@@ -165,6 +165,21 @@
       "name": "LED Speed +",
       "title": "Faster animation",
       "shortName": "SPD+"
+    },
+    {
+      "name": "LED Test 1",
+      "title": "LED driver experiment 1: start the PWM bank of row 0 from its own first channel",
+      "shortName": "LT1"
+    },
+    {
+      "name": "LED Test 2",
+      "title": "LED driver experiment 2: keep the PWM running between columns",
+      "shortName": "LT2"
+    },
+    {
+      "name": "LED Test 3",
+      "title": "LED driver experiment 3: freeze the animation",
+      "shortName": "LT3"
     }
   ]
 }

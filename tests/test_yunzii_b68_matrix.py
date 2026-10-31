@@ -365,6 +365,77 @@ class TestB68TapHold(unittest.TestCase):
             kb.close()
 
 
+class TestB68TapDance(TestB68TapHold):
+    """The encoder push is TD(0): tap = mute, hold = play/pause, double tap = next track. Vial edits the entries."""
+
+    def consumer(self, kb):
+        return [r[1] for r in kb.ep1_reports() if r[0] == 2 and r[1]]
+
+    def reply(self, kb, request):
+        packet = list(request) + [0] * (32 - len(request))
+        before = len(kb.ep2_reports()) if hasattr(kb, "ep2_reports") else 0
+        self.via(kb, request)
+        text = kb.stderr_text()
+        found = re.findall(r"\[SIE\] EP2 IN \d+ bytes:((?: [0-9a-f]{2})*)", text)
+        return [int(x, 16) for x in found[-1].split()]
+
+    def test_the_entries_are_there(self):
+        kb = self.session()
+        try:
+            self.assertEqual(self.reply(kb, [0xFE, 0x0D, 0x00])[0], 8)  # eight tap dances
+            entry = self.reply(kb, [0xFE, 0x0D, 0x01, 0])
+            self.assertEqual(entry[0], 0)
+            self.assertEqual(entry[1:7], [0xA8, 0x00, 0xAE, 0x00, 0xAB, 0x00])  # KC_MUTE, KC_MPLY, KC_MNXT
+            self.assertEqual(self.reply(kb, [0xFE, 0x0D, 0x01, 9])[0], 1)  # no such entry
+        finally:
+            kb.close()
+
+    def test_entries_can_be_written(self):
+        kb = self.session()
+        try:
+            self.reply(kb, [0xFE, 0x0D, 0x02, 3, 0x2C, 0, 0x28, 0, 0, 0, 0, 0, 0x2C, 1])
+            entry = self.reply(kb, [0xFE, 0x0D, 0x01, 3])
+            self.assertEqual(entry[1:11], [0x2C, 0, 0x28, 0, 0, 0, 0, 0, 0x2C, 1])
+        finally:
+            kb.close()
+
+    def test_tap(self):
+        kb = self.session()
+        try:
+            kb.matrix.press(15, 0)
+            self.spin(kb, 300)
+            kb.matrix.release(15, 0)
+            self.spin(kb, 300)
+            self.advance_clock(kb, 400)  # no second tap came
+            self.spin(kb, 400)
+            self.assertEqual(self.consumer(kb), [0xE2])
+        finally:
+            kb.close()
+
+    def test_hold(self):
+        kb = self.session()
+        try:
+            kb.matrix.press(15, 0)
+            self.spin(kb, 300)
+            self.advance_clock(kb, 400)
+            self.spin(kb, 400)
+            self.assertEqual(self.consumer(kb), [0xCD])
+        finally:
+            kb.close()
+
+    def test_double_tap(self):
+        kb = self.session()
+        try:
+            for _ in range(2):
+                kb.matrix.press(15, 0)
+                self.spin(kb, 300)
+                kb.matrix.release(15, 0)
+                self.spin(kb, 300)
+            self.assertEqual(self.consumer(kb), [0xB5])
+        finally:
+            kb.close()
+
+
 class TestB68EncoderFromVial(TestB68TapHold):
     """An encoder keycode assigned with Vial's 'set encoder' command is what a turn then sends."""
 

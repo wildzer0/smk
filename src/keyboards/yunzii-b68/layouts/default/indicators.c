@@ -59,6 +59,13 @@ static uint8_t regen_col;
 
 static volatile bool render_dirty;
 
+// Driver experiments, flipped with Fn+A, S, D (see kbdef.h): bit 0 the bank of row 0 is started by its own first channel instead of
+// PWM20, bit 1 the PWM keeps running between columns (only the widths and the sink change), bit 2 the animation is frozen
+static uint8_t tests;
+#define TEST_NO_PWM20   (1u << 0)
+#define TEST_KEEP_PWM   (1u << 1)
+#define TEST_FREEZE     (1u << 2)
+
 void indicators_apply_defaults()
 {
     user_settings.led_effect     = FX_RADIAL;
@@ -99,8 +106,13 @@ void indicators_pwm_enable()
     PWM15CON = PWM_CHANNEL_ON;
 
     // P1.0-P1.2 are not LED channels: the bank is started by its first channel, whose width is kept at zero
-    PWM20CON = PWM_BANK_ON;
-    PWM23CON = PWM_CHANNEL_ON;
+    if (tests & TEST_NO_PWM20) {
+        PWM20CON = 0;
+        PWM23CON = PWM_BANK_ON;
+    } else {
+        PWM20CON = PWM_BANK_ON;
+        PWM23CON = PWM_CHANNEL_ON;
+    }
     PWM24CON = PWM_CHANNEL_ON;
     PWM25CON = PWM_CHANNEL_ON;
 }
@@ -189,11 +201,17 @@ bool indicators_update_step(keyboard_state_t *keyboard, uint8_t current_step)
     keyboard;
     current_step;
 
-    indicators_pwm_disable(); // park while the widths change
+    if (tests & TEST_KEEP_PWM) {
+        if (load_column(led_col)) {
+            user_matrix_col_select(led_col);
+        }
+    } else {
+        indicators_pwm_disable(); // park while the widths change
 
-    if (load_column(led_col)) {
-        user_matrix_col_select(led_col); // this column's keys are the ones lit
-        indicators_pwm_enable();         // enabled last: the column lights now
+        if (load_column(led_col)) {
+            user_matrix_col_select(led_col); // this column's keys are the ones lit
+            indicators_pwm_enable();         // enabled last: the column lights now
+        }
     }
 
     bool frame_wrapped = false;
@@ -202,7 +220,9 @@ bool indicators_update_step(keyboard_state_t *keyboard, uint8_t current_step)
         frame_wrapped = true;
 
         if (++anim_ctr >= 4) {
-            anim_ctr  = 0;
+            anim_ctr = 0;
+        }
+        if (anim_ctr == 0 && !(tests & TEST_FREEZE)) {
             led_phase = (uint8_t)(led_phase + user_settings.led_speed);
             render_dirty = true;
         }
@@ -303,6 +323,13 @@ void indicators_speed_down()
         user_settings.led_speed--;
     }
     settings_mark_dirty();
+}
+
+void indicators_toggle_test(uint8_t bit)
+{
+    indicators_pwm_disable();
+    tests ^= (uint8_t)(1u << bit);
+    indicators_pwm_enable();
 }
 
 // A flash write runs with interrupts off for ~5 ms: park the scan and the LEDs across it.

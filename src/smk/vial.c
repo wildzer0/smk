@@ -4,6 +4,7 @@
 #include "keymap.h"
 #include "layer.h"
 #include "kbdef.h"
+#include "keymap_store.h"
 #include <string.h>
 
 #define UNLOCK_COUNTER_MAX 50u
@@ -137,10 +138,45 @@ void vial_receive(uint8_t *data, uint8_t length)
             memset(data, 0xFF, length);
             break;
 
-        // tap dance, combos, key overrides: none yet (the last byte lists optional features, also none)
+        // tap dances (combos and key overrides: none). 0x00 counts the entries, 0x01 reads one (status, then its five words),
+        // 0x02 writes one (index in data[3], the five words from data[4])
         case vial_dynamic_entry_op:
-            if (data[2] == 0x00) {
-                memset(data, 0, length);
+            switch (data[2]) {
+                case 0x00:
+                    memset(data, 0, length);
+#ifdef KEYMAP_TAP_DANCE_COUNT
+                    data[0] = KEYMAP_TAP_DANCE_COUNT;
+#endif
+                    break;
+#ifdef KEYMAP_TAP_DANCE_COUNT
+                case 0x01: {
+                    const uint8_t index = data[3];
+                    memset(data, 0, length);
+                    if (index >= KEYMAP_TAP_DANCE_COUNT) {
+                        data[0] = 1;
+                        break;
+                    }
+                    for (uint8_t field = 0; field < 5; field++) {
+                        const uint16_t word = keymap_store_tap_dance_get(index, field);
+                        data[1 + field * 2]     = (uint8_t)(word & 0xFFu);
+                        data[2 + field * 2]     = (uint8_t)(word >> 8);
+                    }
+                    break;
+                }
+                case 0x02: {
+                    const uint8_t index = data[3];
+                    uint8_t       status = (index >= KEYMAP_TAP_DANCE_COUNT) ? 1 : 0;
+                    if (!status) {
+                        for (uint8_t field = 0; field < 5; field++) {
+                            keymap_store_tap_dance_set(index, field, (uint16_t)(data[4 + field * 2] | ((uint16_t)data[5 + field * 2] << 8)));
+                        }
+                    }
+                    data[0] = status;
+                    break;
+                }
+#endif
+                default:
+                    break;
             }
             break;
 

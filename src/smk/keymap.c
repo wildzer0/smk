@@ -38,6 +38,15 @@ uint16_t keymap_default_encoder(uint8_t layer, uint8_t encoder, bool clockwise)
     return (layer < keymap_layers) ? encoder_map[layer][encoder][clockwise ? 1 : 0] : KC_TRANSPARENT;
 }
 
+#ifdef KEYMAP_TAP_DANCE_COUNT
+extern const uint16_t tap_dance_default[KEYMAP_TAP_DANCE_COUNT][5]; // the layout's defaults
+
+uint16_t keymap_default_tap_dance(uint8_t index, uint8_t field)
+{
+    return tap_dance_default[index][field];
+}
+#endif
+
 uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
 {
     return keymap_store_get_encoder(layer, encoder, clockwise);

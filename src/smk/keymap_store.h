@@ -45,6 +45,14 @@ void keymap_store_macro_write(uint16_t offset, uint8_t size, const uint8_t *src)
 void keymap_store_macro_clear(void);
 #endif
 
+#ifdef KEYMAP_TAP_DANCE_COUNT
+// Tap dances, as Vial edits them: five 16-bit fields each, in this order: 0 on tap, 1 on hold, 2 on double tap, 3 on tap-then-hold
+// (stored, not acted on), 4 the tapping term in ms (0 = the default one).
+uint16_t keymap_default_tap_dance(uint8_t index, uint8_t field); // provided by the caller
+uint16_t keymap_store_tap_dance_get(uint8_t index, uint8_t field);
+bool     keymap_store_tap_dance_set(uint8_t index, uint8_t field, uint16_t value);
+#endif
+
 bool keymap_store_dirty(void);
 
 // Writes the RAM copy to flash if it changed. Takes tens of milliseconds.

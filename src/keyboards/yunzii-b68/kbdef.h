@@ -22,6 +22,9 @@
 #define KEYMAP_MACRO_COUNT 16
 #define KEYMAP_MACRO_BYTES 512
 
+// Vial tap dances (tap / hold / double tap on one key, e.g. the encoder push): 8 of them, stored with the keymap
+#define KEYMAP_TAP_DANCE_COUNT 8
+
 // Row Pin Bits
 #define KB_R0_P7_1 _P7_1
 #define KB_R1_P7_2 _P7_2
@@ -99,6 +102,10 @@
 #define B68_BRI_UP  0x7E04
 #define B68_SPD_DN  0x7E05
 #define B68_SPD_UP  0x7E06
+// LED driver experiments (Fn+A, S, D): each flips one way the driver works, to find what makes the backlight flicker
+#define B68_LED_T1  0x7E07
+#define B68_LED_T2  0x7E08
+#define B68_LED_T3  0x7E09
 
 // Four LED subframes per key scan: a subframe lights one column for 400 us and a scan takes about 320 us (plus 100 us before the next
 // slot), so a frame of 16 columns takes about 8 ms (125 Hz) and a key is polled every 2 ms. With one or two subframes per scan the

@@ -24,7 +24,7 @@ keyboards += {
             # Vial's desktop app only lists a keyboard whose USB serial number contains this string
             # (vial.rocks probes the keyboard instead)
             'serial' : 'vial:f64c2b3c',
-            'keymap_sectors' : '4',  # keymap 1280 B + encoder 32 B + macros 512 B + header = 1836 B per copy, two copies
+            'keymap_sectors' : '4',  # keymap 1280 B + encoder 32 B + macros 512 B + tap dances 80 B + header = 1918 B per copy, two copies
             # RGB per key: 5 rows x 16 columns; the centre of the radial effect is the middle of the 16-column board
             'led_rows' : '5',
             'led_cols' : '16',

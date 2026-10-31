@@ -193,3 +193,25 @@ nix develop --command bash -c 'meson setup build -Dboards=yunzii-b68 --buildtype
 
 Il file da flashare è `build/yunzii-b68_default_smk.hex`. Il flicker dei LED: `LED_SUBFRAMES_PER_SCAN` è 4 (cornice di 16 colonne
 ≈ 8 ms, 125 Hz; prima 55–100 Hz).
+
+
+## Tap dance (click e pressione lunga dell'encoder)
+
+Il tasto dell'encoder (cella `c15r0`, in alto a destra) ora è `TD(0)`, un *tap dance* di Vial. Si modifica nella scheda **Tap Dance**
+di Vial (8 voci): *Tap* = un tocco, *Hold* = tenuto oltre il tempo (200 ms, o il "Custom Tapping Term" della voce), *Double Tap* =
+due tocchi (se è impostato, il tocco singolo aspetta un tempo per capire se ne arriva un secondo). Il campo *Tap + Hold* si salva
+ma non è ancora usato. Per usare un'altra voce, assegna `TD(n)` al tasto dalla scheda Keycodes > Tap Dance.
+Predefinito di `TD(0)`: tocco = Mute, tenuto = Play/Pausa, doppio tocco = traccia successiva.
+Le azioni possono essere qualunque codice (tasti, media, livelli `MO`, macro, tasti luce), non un altro `TD`.
+
+## Tastiera salvata e firmware nuovo
+
+La tastiera salvata in flash porta l'impronta della tastiera predefinita del firmware che l'ha scritta. Se un firmware nuovo cambia la
+tastiera predefinita (per esempio aggiunge i tasti luce), la copia salvata non viene più usata e si riparte dalla predefinita:
+le modifiche fatte con Vial vanno rifatte una volta. Prima di questo cambiamento il flash teneva la tastiera vecchia, quindi mancavano
+i tasti luminosità.
+
+## Tasti luce (livello Fn)
+
+Fn+Q / W = effetto − / +, Fn+E / R = luminosità − / +, Fn+T / Y = velocità − / +. Fn+A / S / D = esperimenti del driver LED
+(vedi sotto), da usare per cercare la causa dello sfarfallio.
