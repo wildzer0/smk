@@ -54,9 +54,31 @@ ricavano da `src/sino51lib/sh68f90/sh68f90.h` (`SFR(...)`/`SFRX(...)`). REA non 
 * **Keymap:** *non* trovata come tabella di codici HID contigua (cercati i pattern QWERTY/ASDF in chiaro). Probabilmente
   codificata in un formato indicizzato; *TBD*, richiede di seguire il codice che costruisce il report tastiera.
 
+
+## Matrice (ricavata dal codice, da confermare in banco — M1.2)
+
+La ISR del Timer2 (vettore `0x43` → `0x0F3A`) è una macchina a **20 slot** (tabella di `LJMP` a `0x0F74`, un contatore in
+XRAM `0x0305`). Ogni slot rilascia la linea precedente (`SETB`) e abbassa la successiva (`CLR`), poi legge le uscite.
+
+* **16 linee strobe, attive basse**, nell'ordine di slot: `P6.0 P6.1 P6.2 P6.3 P6.4 P6.5 P6.6 P6.7`, `P5.0 P5.1 P5.2 P5.7`,
+  `P4.0 P4.2 P4.3 P4.5` (gli ultimi 4 slot sono vuoti: servono a completare il periodo di 20 slot, con ogni probabilità
+  condiviso con la PWM dei LED, che nello stesso gestore viene commutata: `PWM00CON`).
+* **6 linee di lettura** con pull-up: `P5.3`, `P5.4`, `P7.0`, `P7.1`, `P7.2`, `P7.3` (la ISR compone un byte
+  `0xC0 | (P5<<1 & 0x30) | (P7 & 0x0F)` e lo salva in XRAM `0x098E + slot`).
+* Coerenza con la funzione GPIO a `0xA627`: P6 tutta a uscita, P4/P5 uscite a `0x2F`/`0x87` per le strobe, `P5.3/P5.4` e
+  `P7.0–3` ingressi con pull-up. Quindi: **matrice 16 colonne × 6 righe** (colonne = strobe), con 68 tasti dentro.
+* La mappatura *tasto → (colonna, riga)* non si ricava da questi dati: la keymap non è in chiaro (vedi sopra).
+
+## Ingresso in ISP dall'applicazione
+
+All'indirizzo `0xED76` l'app stock esegue `CLR EA; MOV B,#0xA5; MOV A,#0x5A; LJMP 0xFF00`: **identico** a `isp_jump()` di
+SMK. Nel bootloader stock lo stub a `0xFF00` confronta `A==0x5A` e `B==0xA5`. Quindi l'ingresso ISP di SMK
+funziona sulla B68 senza modifiche. L'app stock non ha un reset vector che passa per il bootloader (`LJMP 0x9A26` diretto):
+dopo `sinowisp write` il reset vector è quello dell'immagine scritta.
+
 ## Cosa manca per chiudere M1.6
 
-1. Funzione di scansione matrice: quali pin sono righe/colonne e il ritardo di settling (porta il tempo di slot).
+1. ~~Funzione di scansione matrice~~ → fatto, vedi sopra (resta il ritardo di settling e la mappa tasto→(col,riga)).
 2. Keymap e layer (formato, dimensione, dove si salva la personalizzazione fatta dal software del produttore).
 3. Protocollo verso BK3632 (linee, frame, comandi): confronto con `rf_controller.c`.
 4. Driver LED (PWM, pin, frequenza) e sequenza di sleep/wake (INT4).

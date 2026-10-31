@@ -55,6 +55,7 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 Registro delle decisioni/rilievi emersi durante i task:
 
 * M0.9: **G0 non superato**: l'ISP stock si raggiunge solo tramite l'applicazione (258a:010c, iface 1, report 5). Nano/ICP obbligatorio prima del primo flash (R11). 
+* M1.6: dal firmware stock la matrice è 16 strobe (P6.0–7, P5.0/1/2/7, P4.0/2/3/5) × 6 sense (P5.3/4, P7.0–3); la mappa tasto→(col,riga) si ottiene con un **firmware sonda** dopo il primo flash (niente multimetro). L'ingresso ISP dall'app è identico a SMK.
 * M1.7: lo stock configura via feature report ID 6 (519 B) su EP0 e non usa EP OUT ⇒ piano B di D8 confermato fattibile; D1 (EP2 OUT) resta da provare con S1.
 * M0.10: riletture identiche; il primo dump differiva di 2 byte di stato (0xC60A, 0xC65A). Backup affidabile: `backups/dump/r1.bin`.
 * M0.5: reset vector stock = `LJMP 0x9A26` (applicazione); il bootloader è a 0xF000. Raccolta del report mancante; doppia lettura da confermare in M0.9.
