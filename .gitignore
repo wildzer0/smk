@@ -14,3 +14,5 @@ __pycache__/
 target/
 
 backups/
+# Windows download markers
+*:Zone.Identifier
