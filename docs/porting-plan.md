@@ -49,12 +49,13 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 | M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. M0.5 e M0.9 chiusi (G0 non superato). Dump verificato (M0.10 chiuso). Pronto: M0.4 (pinout connettore). M0.3 (acquisto Nano) ora **obbligatorio** prima del primo flash |
 | M0 | **chiusa a metà** | Restano M0.3, M0.4, M0.6, M0.7: si chiudono all'arrivo del Nano |
 | M1 | **in corso** | M1.7 chiuso (258a:010c, EP1 8 B + EP2 16 B IN, nessun EP OUT, feature ID6 da 519 B). M1.6 (analisi del firmware stock, Claude): prima passata fatta, vedi [yunzii-b68-firmware-stock.md](keyboards/yunzii-b68-firmware-stock.md); restano matrice, keymap, radio, LED. M1.2–M1.5 attendono M0.4 |
-| M2 | **in corso** | M2.1 pronto (unisce ex M2.2), M2.3 in bozza (unisce ex M2.4). Il lavoro senza hardware (M2.1, poi M4.7/M4.13–M4.17 nel simulatore) procede; i pin reali e il flash aspettano M0.4/M1.2 e il Nano |
+| M2 | **in corso** | M2.1 e M2.3 chiusi (scaffold, GPIO a riposo come lo stock, hook di matrice; verificati in simulatore). Prossimi: layout, chord di recupero, bootloader. Il lavoro senza hardware (M2.1, poi M4.7/M4.13–M4.17 nel simulatore) procede; i pin reali e il flash aspettano M0.4/M1.2 e il Nano |
 | M3–M8 | non iniziate | |
 
 Registro delle decisioni/rilievi emersi durante i task:
 
 * M0.9: **G0 non superato**: l'ISP stock si raggiunge solo tramite l'applicazione (258a:010c, iface 1, report 5). Nano/ICP obbligatorio prima del primo flash (R11). 
+* M2.3: i GPIO a riposo letti nel simulatore coincidono con la tabella dello stock (16/16 registri). `GPIO_DRIVE_25MA` vale 0, quindi il drive dello stock (0) è lo stesso della Air60.
 * M1.6: dal firmware stock la matrice è 16 strobe (P6.0–7, P5.0/1/2/7, P4.0/2/3/5) × 5 righe (P7.1–3, P5.3/4); P7.0 è un ingresso extra di funzione ignota; la mappa tasto→(col,riga) si ottiene con un **firmware sonda** dopo il primo flash (niente multimetro). L'ingresso ISP dall'app è identico a SMK.
 * M1.7: lo stock configura via feature report ID 6 (519 B) su EP0 e non usa EP OUT ⇒ piano B di D8 confermato fattibile; D1 (EP2 OUT) resta da provare con S1.
 * M0.10: riletture identiche; il primo dump differiva di 2 byte di stato (0xC60A, 0xC65A). Backup affidabile: `backups/dump/r1.bin`.

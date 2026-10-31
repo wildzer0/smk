@@ -1,7 +1,7 @@
 # Task di sviluppo
 
 Qui vivono le **schede dei task** del [piano di sviluppo](../porting-plan.md). Una scheda = un task = (di norma)
-un branch/PR. Le schede le scrivo io; tu implementi; io faccio review e tengo aggiornati documentazione, indice e stato delle milestone.
+un branch/PR. **Dal 2026-10-31 le implemento io** (codice compreso); a te restano i task che richiedono l'hardware. Ogni modifica è descritta nel commit e nel riepilogo. Tengo aggiornati documentazione, indice e stato delle milestone.
 
 ## Come si usa
 
@@ -31,8 +31,8 @@ un branch/PR. Le schede le scrivo io; tu implementi; io faccio review e tengo ag
 | [M0.10](M0.10-riletture-dump.md) | Riletture del dump e confronto | M0 | **Chiuso** | S |
 
 | [M1.7](M1.7-usb-stock.md) | Descrittori USB stock + preset sinowisp | M1 | **Chiuso** | S |
-| [M2.1](M2.1-scaffold-yunzii-b68.md) | Scaffold `yunzii-b68` con matrice 5×16 dallo stock (include ex M2.2) | M2 | **Pronto** | M |
-| [M2.3](M2.3-gpio-e-matrice.md) | `user_init` (GPIO come lo stock) e `user_matrix` (include ex M2.4) | M2 | Bozza | L |
+| [M2.1](M2.1-scaffold-yunzii-b68.md) | Scaffold `yunzii-b68` con matrice 5×16 dallo stock (include ex M2.2) | M2 | **Chiuso** (Claude) | M |
+| [M2.3](M2.3-gpio-e-matrice.md) | `user_init` (GPIO come lo stock) e `user_matrix` (include ex M2.4) | M2 | **Chiuso** (Claude) | L |
 
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
