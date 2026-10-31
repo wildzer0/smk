@@ -135,6 +135,36 @@
       "name": "HUD Toggle",
       "title": "Show or hide the keyboard HUD overlay",
       "shortName": "HUD"
+    },
+    {
+      "name": "LED Effect -",
+      "title": "Previous backlight effect",
+      "shortName": "FX-"
+    },
+    {
+      "name": "LED Effect +",
+      "title": "Next backlight effect",
+      "shortName": "FX+"
+    },
+    {
+      "name": "LED Brightness -",
+      "title": "Backlight dimmer",
+      "shortName": "BRI-"
+    },
+    {
+      "name": "LED Brightness +",
+      "title": "Backlight brighter",
+      "shortName": "BRI+"
+    },
+    {
+      "name": "LED Speed -",
+      "title": "Slower animation",
+      "shortName": "SPD-"
+    },
+    {
+      "name": "LED Speed +",
+      "title": "Faster animation",
+      "shortName": "SPD+"
     }
   ]
 }

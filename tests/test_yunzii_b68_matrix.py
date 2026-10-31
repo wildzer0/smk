@@ -679,6 +679,53 @@ class TestB68LedProbe2(unittest.TestCase):
         self.assertEqual(typed[:len(want)], want)
 
 
+class TestB68Leds(unittest.TestCase):
+    """The backlight driver: the effect becomes PWM widths on the 15 colour channels, DUTY2 = DUTY1 + width."""
+
+    def duty2(self, kb, high, low):
+        return (kb.get_xram(high, 1)[0] << 8) | kb.get_xram(low, 1)[0]
+
+    def test_solid_white_gives_the_same_width_on_every_channel(self):
+        if not FIRMWARE:
+            self.skipTest("yunzii-b68_default_smk.hex not built")
+        kb = Air60Sim(firmware=FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            settings = kb.sym["user_settings"]
+            kb.cmd("set mem xram 0x%x 0x03 0xFF" % settings)  # led_effect = FX_SOLID, led_brightness = 255
+            kb.brk(kb._a("user_matrix_read_rows"))
+            for _ in range(600):
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.cmd("delete")
+            # PWM00 is channel 12 (bottom row, red): DUTY1 = 195 + 12, width = 255 * 3.5 = 892
+            self.assertEqual(self.duty2(kb, 0xFFE8, 0xFFD0), 195 + 12 + 892)
+            # PWM23 is channel 0 (top row, red): DUTY1 = 195
+            self.assertEqual(self.duty2(kb, 0xFFF7, 0xFFDF), 195 + 0 + 892)
+        finally:
+            kb.close()
+
+    def test_effect_off_gives_zero_width(self):
+        if not FIRMWARE:
+            self.skipTest("yunzii-b68_default_smk.hex not built")
+        kb = Air60Sim(firmware=FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            kb.cmd("set mem xram 0x%x 0x04 0xFF" % kb.sym["user_settings"])  # FX_OFF
+            kb.brk(kb._a("user_matrix_read_rows"))
+            for _ in range(600):
+                kb.run()
+                kb.matrix.inject(kb)
+            kb.cmd("delete")
+            self.assertEqual(self.duty2(kb, 0xFFE8, 0xFFD0), 195 + 12)
+        finally:
+            kb.close()
+
+
 class TestB68Encoder(unittest.TestCase):
     """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
 

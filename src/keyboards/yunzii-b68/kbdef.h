@@ -89,4 +89,17 @@
 // Keyboard HUD (tools/hud): live state over the raw HID interface, plus a key to show/hide the overlay.
 // HUD_TOG is the first custom keycode (QK_KB_0, listed in vial.json under customKeycodes).
 #define HUD_ENABLE
-#define HUD_TOGGLE_KEYCODE 0x7E00
+#define HUD_TOGGLE_KEYCODE B68_HUD_TOG
+
+// Custom keycodes (the first QK_KB values, listed in the same order under customKeycodes in vial.json)
+#define B68_HUD_TOG 0x7E00
+#define B68_FX_PREV 0x7E01
+#define B68_FX_NEXT 0x7E02
+#define B68_BRI_DN  0x7E03
+#define B68_BRI_UP  0x7E04
+#define B68_SPD_DN  0x7E05
+#define B68_SPD_UP  0x7E06
+
+// Two LED subframes per key scan: the scan takes about 320 us and a subframe lights one column for 400 us, so a frame of 16 columns
+// refreshes at roughly 55 Hz.
+#define LED_SUBFRAMES_PER_SCAN 2

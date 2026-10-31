@@ -14,13 +14,13 @@ keyboards += {
         'layouts' : {
             'default' : {
                 'dir' : kb_dir / 'layouts/default',
-                'src' : files('layouts/default/layout.c'),
+                'src' : files('layouts/default/layout.c', 'layouts/default/indicators.c'),
             },
             # the default layout with the raw HID interface on EP2 (spike S1). Media keys and the ISP
             # report are not available in this build: enter the bootloader with the recovery chord
             'rawhid' : {
                 'dir' : kb_dir / 'layouts/default',
-                'src' : files('layouts/default/layout.c'),
+                'src' : files('layouts/default/layout.c', 'layouts/default/indicators.c'),
                 # bcdDevice changes with the descriptors: 0x0200 = keyboard, media and ISP on interface 0 + raw HID
                 'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200'],
             },
@@ -28,7 +28,7 @@ keyboards += {
             # app that does not know protocol 2 connects (diagnostic only: it shows just the first 8 columns)
             'hudv1' : {
                 'dir' : kb_dir / 'layouts/default',
-                'src' : files('layouts/default/layout.c'),
+                'src' : files('layouts/default/layout.c', 'layouts/default/indicators.c'),
                 'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200', '-DHUD_FORCE_PROTOCOL_1=1'],
             },
             # lights one LED channel at a time and types a label per step, to find the LED wiring (docs/led-probe.md)
@@ -53,6 +53,11 @@ keyboards += {
             # (vial.rocks probes the keyboard instead)
             'serial' : 'vial:f64c2b3c',
             'keymap_sectors' : '4',  # keymap 1280 B + encoder 32 B + macros 512 B + header = 1836 B per copy, two copies
+            # RGB per key: 5 rows x 16 columns; the centre of the radial effect is the middle of the 16-column board
+            'led_rows' : '5',
+            'led_cols' : '16',
+            'led_cx2' : '15',
+            'led_cy2' : '4',
             'vial_json' : 'vial.json',
             'vial_uid' : '0x46ecd0565df84fa8',
             # (row, col) cells to hold to unlock: Esc and Enter

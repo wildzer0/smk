@@ -20,17 +20,55 @@ void kb_send_extra(__xdata report_extra_t *report)
     usb_send_extra(report);
 }
 
-#ifdef HUD_ENABLE
-// The HUD_TOG key is not sent to the host: the overlay sees a counter change.
+extern void indicators_next_effect();
+extern void indicators_prev_effect();
+extern void indicators_brightness_up();
+extern void indicators_brightness_down();
+extern void indicators_speed_up();
+extern void indicators_speed_down();
+
+// The board's custom keys are not sent to the host.
 bool kb_process_record(uint16_t keycode, bool key_pressed)
 {
-    if (keycode == HUD_TOGGLE_KEYCODE) {
-        if (key_pressed) {
-            hud_toggle_pressed();
-        }
-        return false;
-    }
-
-    return true;
-}
+    switch (keycode) {
+#ifdef HUD_ENABLE
+        case B68_HUD_TOG: // the overlay sees a counter change
+            if (key_pressed) {
+                hud_toggle_pressed();
+            }
+            return false;
 #endif
+        case B68_FX_PREV:
+            if (key_pressed) {
+                indicators_prev_effect();
+            }
+            return false;
+        case B68_FX_NEXT:
+            if (key_pressed) {
+                indicators_next_effect();
+            }
+            return false;
+        case B68_BRI_DN:
+            if (key_pressed) {
+                indicators_brightness_down();
+            }
+            return false;
+        case B68_BRI_UP:
+            if (key_pressed) {
+                indicators_brightness_up();
+            }
+            return false;
+        case B68_SPD_DN:
+            if (key_pressed) {
+                indicators_speed_down();
+            }
+            return false;
+        case B68_SPD_UP:
+            if (key_pressed) {
+                indicators_speed_up();
+            }
+            return false;
+        default:
+            return true;
+    }
+}

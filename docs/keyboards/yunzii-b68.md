@@ -138,8 +138,10 @@ Verificato con la sonda `ledprobe` (un canale per volta, colonna alta + linea di
 
   (canale `k`: `P1.k` per k<6, `P2.(k−6)` per 6≤k<12, `P3.(k−12)` per k≥12.) La riga 3 e la riga 4 sono quindi scambiate rispetto all'ordine dei canali.
 * Il LED del tasto in colonna `c`, riga `r` si accende con il pozzo `c` basso e il suo canale colore alto. 67 tasti × RGB.
-* **Non ancora identificati:** i canali 0, 1, 2 (`P1.0–2`) non accendono nessun tasto con nessun pozzo (A) e il LED di stato vicino al Caps. Seconda sonda: `ledprobe2`.
-* **Non ancora noto:** come si traduce la larghezza dell'impulso PWM in luminosità e con quale polarità (la sonda 2 lo prova).
+* **PWM (sonda 2, serie F):** l'uscita è **alta tra DUTY1 e DUTY2**, qualunque dei due sia il maggiore; la larghezza `|DUTY2 − DUTY1|` è la luminosità (larghezza 0 = spento, 1100 su 1200 = pieno). Con periodo 1200 conteggi e `PWMxCON = 0x89` per il primo canale di ogni banco (e `0x08` per gli altri) come nello stock.
+* **Mappa canale → PWM:** `P1.n ↔ PWM2n`, `P2.n ↔ PWM1n`, `P3.n ↔ PWM0n`.
+* **Il LED di stato accanto al Caps non è pilotato da nessun pin provato** (sonda 2, serie D ed E: `P4.1`, `P7.4`, `P7.5`, `P7.6` come sorgenti e pozzi, canali `P1.0–2` con tutti i pozzi): nessun LED si è acceso. Ipotesi: lo accende la radio BK3632 (che ha il suo indicatore di collegamento) o l'integrato di carica
+  della batteria. Si scioglie con la guida della radio o osservando quando si accende.
 
 ## Hardware (M0.4)
 
