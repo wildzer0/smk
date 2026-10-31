@@ -21,7 +21,8 @@ keyboards += {
             'rawhid' : {
                 'dir' : kb_dir / 'layouts/default',
                 'src' : files('layouts/default/layout.c'),
-                'args' : ['-DRAW_HID_ENABLE=1'],
+                # bcdDevice changes with the descriptors: 0x0200 = keyboard, media and ISP on interface 0 + raw HID
+                'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200'],
             },
             # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
             'probe' : {

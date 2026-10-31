@@ -11,6 +11,7 @@
 #include "indicators.h"
 #include "sleep.h"
 #include "layer.h"
+#include "tapping.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -24,6 +25,7 @@ volatile bool matrix_updated;
 void matrix_init()
 {
     layer_init();
+    tapping_init();
     matrix_updated = false;
 
     for (int i = 0; i < MATRIX_COLS; i++) {
@@ -88,9 +90,47 @@ void matrix_tap_keycode(uint16_t keycode)
     send_keycode(keycode, false);
 }
 
+static void process_key_state(uint8_t row, uint8_t col, bool pressed);
+
+// ---- what tapping.c needs from the rest of the firmware ----
+void tapping_hook_replay(uint8_t row, uint8_t col, bool pressed)
+{
+    process_key_state(row, col, pressed);
+}
+
+void tapping_hook_tap(uint8_t basic_keycode)
+{
+    layer_key_pressed(); // a tapped key is a key press as far as one-shots go
+    send_keycode(basic_keycode, true);
+    send_keycode(basic_keycode, false);
+    layer_key_released();
+}
+
+void tapping_hook_mods(uint8_t mods, bool on)
+{
+    if (on) {
+        layer_hook_mods_add(mods);
+    } else {
+        layer_hook_mods_del(mods);
+    }
+}
+
+void tapping_hook_layer(uint8_t layer, bool on)
+{
+    layer_hold(layer, on);
+}
+
 static void process_key_state(uint8_t row, uint8_t col, bool pressed)
 {
+    if (tapping_intercept(row, col, pressed)) {
+        return; // a tap-or-hold key is undecided: this waits behind it (or decides it)
+    }
+
     const uint16_t qcode = pressed ? layer_key_down(row, col) : layer_key_up(row, col);
+
+    if (tapping_event(row, col, qcode, pressed)) {
+        return; // a tap-or-hold key starts waiting, or lets go after becoming a hold
+    }
 
     if (layer_process(qcode, pressed)) {
         return;
@@ -107,6 +147,11 @@ static void process_key_state(uint8_t row, uint8_t col, bool pressed)
     if (!pressed) {
         layer_key_released();
     }
+}
+
+void matrix_tap_task(void)
+{
+    tapping_task();
 }
 
 void matrix_scan_full(void)

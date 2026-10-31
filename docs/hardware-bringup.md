@@ -133,3 +133,14 @@ Vol+/Vol− dell'encoder e i tasti Fn+freccia, e si rientra in ISP dall'applicaz
 **Da provare dopo il flash:** digitare normalmente, Fn + numero, **encoder (volume)**, Fn + Su/Giù, LED di Bloc Maiusc, e il
 rientro in ISP dall'applicazione: `.\sinowisp.exe write --platform sh68f90 --vendor_id 0x258a --product_id 0xdead --isp_iface_num 0 --format ihex -f <hex>`
 (l'ultimo punto prova il report ISP spostato; se non funziona, il chord Esc + 1 + 2 resta il rimedio).
+
+## Se Windows dice "dispositivo USB non riconosciuto" dopo un riflash
+
+Windows tiene in cache i descrittori letti per un VID:PID (e `bcdDevice`). Quando una build cambia interfacce, endpoint o report
+descriptor ma ha lo stesso `bcdDevice`, il dispositivo "nuovo" può essere rifiutato finché non lo scolleghi e ricolleghi. Per questo
+`bcdDevice` ora è un parametro per layout (`-DUSB_BCD_DEVICE`): la build `rawhid` usa `0x0200`. **Regola:** ogni volta che si
+cambiano i descrittori USB, aumentare quel valore. Il primo riflash verso la nuova versione può comunque chiedere un
+scollega/ricollega; i riflash successivi con gli stessi descrittori non dovrebbero.
+
+Se il problema si ripresenta con descrittori identici, il sospetto passa al passaggio bootloader → applicazione senza
+disconnessione del bus: in quel caso aggiungo un distacco dell'USB di ~50 ms all'avvio.

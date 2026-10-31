@@ -5,6 +5,7 @@ src_smk += files(
     'usb.c',
     'matrix.c',
     'layer.c',
+    'tapping.c',
     'keymap.c',
     'keymap_store.c',
     'encoder.c',

@@ -385,6 +385,75 @@ class TestB68RawHidBuildInterface0(unittest.TestCase):
         self.assertIn([2, 0xEA, 0x00], reports)  # consumer report ID 2, usage 0x00EA (volume down)
 
 
+class TestB68TapHold(unittest.TestCase):
+    """LT/MT keys assigned over VIA, as Vial does it, then pressed on the matrix."""
+
+    LT_1_SPACE = 0x4000 | (1 << 8) | 0x2C  # LT(1, KC_SPACE)
+    EP2_OUT_BUF, OEP2CNT, USBIF2, OEP2IF = 0x1140, 0xA4, 0x93, 0x40
+
+    def session(self):
+        if not RAWHID_FIRMWARE:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+        kb = Air60Sim(firmware=RAWHID_FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        kb.boot(usb=True)
+        kb.mark_usb_configured()
+        kb.brk(kb._a("user_matrix_read_rows"))
+        return kb
+
+    def spin(self, kb, runs=300):
+        for _ in range(runs):
+            kb.run()
+            kb.matrix.inject(kb)
+
+    def via(self, kb, request):
+        """One VIA request over the raw HID interface (see TestB68RawHid for why SETUP rides along)."""
+        packet = list(request) + [0] * (32 - len(request))
+        kb.cmd("set mem xram 0x%x " % self.EP2_OUT_BUF + " ".join("0x%02x" % b for b in packet))
+        kb.set_sfr(self.OEP2CNT, 32)
+        kb.cmd("set mem xram 0x1100 0x80 0x06 0x00 0x01 0x00 0x00 0x40 0x00")
+        kb.set_sfr(self.USBIF2, self.OEP2IF)
+        kb.set_sfr(0x92, 0x10)
+        self.spin(kb, 200)
+
+    def assign(self, kb, row, col, keycode):
+        self.via(kb, [0x05, 0, row, col, keycode >> 8, keycode & 0xFF])
+
+    def advance_clock(self, kb, ms):
+        clock = kb.sym["timer_now_ms"]
+        now = int.from_bytes(bytes(kb.get_xram(clock, 4)), "little")
+        kb.cmd("set mem xram 0x%x " % clock + " ".join("0x%02x" % b for b in (now + ms).to_bytes(4, "little")))
+
+    def typed(self, kb):
+        return [r[3] for r in kb.ep1_reports() if r[0] == 3 and r[3]]
+
+    def test_tap_sends_the_key(self):
+        kb = self.session()
+        try:
+            self.assign(kb, 1, 1, self.LT_1_SPACE)  # Q becomes LT(1, Space)
+            kb.matrix.press(1, 1)
+            self.spin(kb, 500)
+            kb.matrix.release(1, 1)
+            self.spin(kb, 600)
+            self.assertEqual(self.typed(kb), [0x2C])  # a tap is a space
+        finally:
+            kb.close()
+
+    def test_hold_selects_the_layer(self):
+        kb = self.session()
+        try:
+            self.assign(kb, 1, 1, self.LT_1_SPACE)
+            kb.matrix.press(1, 1)
+            self.spin(kb, 500)
+            self.advance_clock(kb, 400)
+            self.spin(kb, 500)
+            kb.matrix.press(1, 0)  # c1r0 is 1 on the base layer and F1 on layer 1
+            self.spin(kb, 700)
+            self.assertEqual(self.typed(kb), [0x3A])  # F1
+        finally:
+            kb.close()
+
+
 class TestB68Encoder(unittest.TestCase):
     """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
 

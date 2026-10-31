@@ -15,3 +15,6 @@ bool matrix_is_on(uint8_t row, uint8_t col);
 
 // Press and release a keycode right away (an encoder step). Layer keycodes are not supported.
 void matrix_tap_keycode(uint16_t keycode);
+
+// Main loop: lets a tap-or-hold key that was held long enough become a hold.
+void matrix_tap_task(void);

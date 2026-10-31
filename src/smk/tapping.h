@@ -1,0 +1,41 @@
+#pragma once
+
+#include <stdint.h>
+#include <stdbool.h>
+
+// Tap-or-hold keys: LT(layer, kc) and MT(mods, kc). Tapped, the key sends `kc`; held longer than
+// TAPPING_TERM it switches the layer on or holds the modifiers.
+//
+// While such a key is undecided, the key events that follow are kept in a small queue and replayed once
+// it is decided, so a key typed during the wait lands on the right layer (QMK does the same). No
+// "permissive hold" or "hold on other key press": the decision is the release (tap) or the timeout (hold).
+
+#ifndef TAPPING_TERM
+#    define TAPPING_TERM 200u // ms
+#endif
+
+// layer taps toggling: tap this many times in a row (TT)
+#ifndef TAPPING_TOGGLE
+#    define TAPPING_TOGGLE 5u
+#endif
+
+bool tapping_is_tap_hold(uint16_t keycode);
+
+// Call first for every key event, before the keycode is looked up: while a tap-hold key is undecided the
+// events are kept (True), and its own release decides it as a tap. False: no wait is going on.
+bool tapping_intercept(uint8_t row, uint8_t col, bool pressed);
+
+// Then, with the keycode the key went down with. True when it is a tap-hold key (it starts the wait on a
+// press, or ends a hold on its release): nothing more to do with it; false: handle it as usual.
+bool tapping_event(uint8_t row, uint8_t col, uint16_t keycode, bool pressed);
+
+// Main loop: a key held past TAPPING_TERM becomes a hold.
+void tapping_task(void);
+
+void tapping_init(void);
+
+// Provided by the caller.
+void tapping_hook_replay(uint8_t row, uint8_t col, bool pressed);    // feed a queued event through the normal path
+void tapping_hook_tap(uint8_t basic_keycode);                        // press and release a key
+void tapping_hook_mods(uint8_t mods, bool on);                       // hold / release HID modifier bits
+void tapping_hook_layer(uint8_t layer, bool on);                     // layer on / off while the key is held

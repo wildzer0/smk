@@ -35,6 +35,19 @@ uint16_t keymap_encoder_get(uint8_t layer, uint8_t encoder, bool clockwise)
     return encoder_map[layer][clockwise ? 1 : 0];
 }
 
+// the clock layer.c reads for TT
+static uint16_t clock_ms;
+
+uint16_t timer_read(void)
+{
+    return clock_ms;
+}
+
+uint16_t timer_elapsed(uint16_t since)
+{
+    return (uint16_t)(clock_ms - since);
+}
+
 static uint8_t mods;
 
 void layer_hook_mods_add(uint8_t m)
@@ -256,8 +269,73 @@ static void test_encoder_lookup(void)
     CHECK(layer_lookup_encoder(0, true) == KC_PGDN);
 }
 
+static void test_layer_mod(void)
+{
+    reset();
+    layer_process(LM(1, MOD_LSFT | MOD_LCTL), true);
+    CHECK(layer_lookup(0, 0) == KC_1);
+    CHECK(mods == 0x03);
+    layer_process(LM(1, MOD_LSFT | MOD_LCTL), false);
+    CHECK(layer_lookup(0, 0) == KC_A);
+    CHECK(mods == 0);
+}
+
+static void test_layer_tap_toggle(void)
+{
+    reset();
+    clock_ms = 1000;
+
+    layer_process(TT(1), true); // held: a momentary layer
+    CHECK(layer_lookup(0, 0) == KC_1);
+    clock_ms += 400;
+    layer_process(TT(1), false);
+    CHECK(layer_lookup(0, 0) == KC_A);
+
+    for (int tap = 0; tap < 4; tap++) { // four quick taps: still momentary
+        clock_ms += 50;
+        layer_process(TT(1), true);
+        clock_ms += 50;
+        layer_process(TT(1), false);
+        CHECK(layer_lookup(0, 0) == KC_A);
+    }
+
+    clock_ms += 50;
+    layer_process(TT(1), true);
+    clock_ms += 50;
+    layer_process(TT(1), false); // the fifth tap latches the layer on
+    CHECK(layer_lookup(0, 0) == KC_1);
+
+    for (int tap = 0; tap < 5; tap++) { // five more switch it off again
+        clock_ms += 50;
+        layer_process(TT(1), true);
+        clock_ms += 50;
+        layer_process(TT(1), false);
+    }
+    CHECK(layer_lookup(0, 0) == KC_A);
+}
+
+static void test_layer_tap_toggle_pause_resets_the_count(void)
+{
+    reset();
+    clock_ms = 5000;
+    for (int tap = 0; tap < 4; tap++) {
+        layer_process(TT(1), true);
+        clock_ms += 50;
+        layer_process(TT(1), false);
+        clock_ms += 50;
+    }
+    clock_ms += 1000; // too long a pause
+    layer_process(TT(1), true);
+    clock_ms += 50;
+    layer_process(TT(1), false); // would have been the fifth tap
+    CHECK(layer_lookup(0, 0) == KC_A);
+}
+
 int main(void)
 {
+    test_layer_mod();
+    test_layer_tap_toggle();
+    test_layer_tap_toggle_pause_resets_the_count();
     test_encoder_lookup();
     test_base_and_transparent();
     test_momentary();

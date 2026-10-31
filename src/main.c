@@ -104,6 +104,7 @@ void main(void)
         kb_update_switches();
         kb_update();
         matrix_task();
+        matrix_tap_task();
 
         indicators_render();
 

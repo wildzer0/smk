@@ -31,6 +31,9 @@ void layer_hook_mods_add(uint8_t mods);
 void layer_hook_mods_del(uint8_t mods);
 
 void    layer_init(void);
+
+// Layer on / off for a key that is held (LT once it becomes a hold).
+void layer_hold(uint8_t layer, bool on);
 void    layer_set_default(uint8_t layer);
 uint8_t layer_get_default(void);
 

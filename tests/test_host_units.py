@@ -57,6 +57,11 @@ class TestEncoder(unittest.TestCase):
                       extra_flags=("-D__code=", "-D__critical="))
 
 
+class TestTapping(unittest.TestCase):
+    def test_tapping(self):
+        build_and_run(self, "tests/host/test_tapping.c", "src/smk/tapping.c")
+
+
 class TestTimer(unittest.TestCase):
     def test_timer(self):
         build_and_run(self, "tests/host/test_timer.c", "src/smk/timer.c")

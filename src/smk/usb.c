@@ -23,6 +23,12 @@
 #    define USB_PID 0xbeef
 #endif
 
+// Windows keeps the descriptors it read for a VID:PID (and bcdDevice). Change this whenever a build changes the
+// interfaces, endpoints or report descriptors, or Windows may refuse the "new" device until it is replugged.
+#ifndef USB_BCD_DEVICE
+#    define USB_BCD_DEVICE 0x0000
+#endif
+
 #ifndef USB_STR_MANUFACTURER
 #    define USB_STR_MANUFACTURER "contact@carlossless.io"
 #endif
@@ -328,7 +334,7 @@ usb_desc_device_c usb_desc_device = {
     .bMaxPacketSize0    = 8,
     .idVendor           = USB_VID,
     .idProduct          = USB_PID,
-    .bcdDevice          = 0x0000,
+    .bcdDevice          = USB_BCD_DEVICE,
     .iManufacturer      = USB_STRING_MANUFACTURER,
     .iProduct           = USB_STRING_PRODUCT,
     .iSerialNumber      = USB_STRING_SERIAL_NUMBER,

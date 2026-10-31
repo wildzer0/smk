@@ -1395,6 +1395,21 @@ enum keycode_aliases {
 // One-shot modifier: active for the next key press. `mod` is MOD_x, or MOD_x | MOD_y.
 #define OSM(mod) (QK_ONE_SHOT_MOD | ((mod)&0x1F))
 
+// Layer tap: tap sends `kc`, hold switches to `layer` (0-15) while the key is down
+#define LT(layer, kc) (QK_LAYER_TAP | (((layer)&0xF) << 8) | ((kc)&0xFF))
+#define QK_LAYER_TAP_GET_LAYER(code) (((code) >> 8) & 0xF)
+#define QK_LAYER_TAP_GET_TAP_KEYCODE(code) ((code)&0xFF)
+// Mod tap: tap sends `kc`, hold sends the modifiers `mod` (MOD_x, right-hand bit 4)
+#define MT(mod, kc) (QK_MOD_TAP | (((mod)&0x1F) << 8) | ((kc)&0xFF))
+#define QK_MOD_TAP_GET_MODS(code) (((code) >> 8) & 0x1F)
+#define QK_MOD_TAP_GET_TAP_KEYCODE(code) ((code)&0xFF)
+// Layer + modifiers: the layer and the modifiers are on while the key is down
+#define LM(layer, mod) (QK_LAYER_MOD | (((layer)&0xF) << 5) | ((mod)&0x1F))
+#define QK_LAYER_MOD_GET_LAYER(code) (((code) >> 5) & 0xF)
+#define QK_LAYER_MOD_GET_MODS(code) ((code)&0x1F)
+// Layer tap toggle: momentary layer; tapped five times in a row it toggles the layer
+#define TT(layer) (QK_LAYER_TAP_TOGGLE | ((layer)&0x1F))
+
 // Modifier masks for OSM (QMK encoding: bit 4 moves the modifiers to the right hand)
 #define MOD_LCTL 0x01
 #define MOD_LSFT 0x02
