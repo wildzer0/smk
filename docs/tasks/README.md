@@ -24,10 +24,10 @@ un branch/PR. Le schede le scrivo io; tu implementi; io faccio review e tengo ag
 | M0.2 | Scheletro di `docs/keyboards/yunzii-b68.md` | M0 | **Chiuso** (assorbito in M0.1) | S |
 | M0.3 | Acquisti: Arduino Nano + MOSFET + componenti (vedi [recovery-icp.md](../recovery-icp.md)) | M0 | Bozza | S |
 | [M0.4](M0.4-pinout-connettore.md) | Connettore di programmazione e identificazione chip (niente foto per ora) | M0 | **Pronto** | S |
-| [M0.5](M0.5-dump-via-isp.md) | Dump del firmware stock via ISP (`-s full`); ICP solo se serve | M0 | **Pronto** | M |
+| [M0.5](M0.5-dump-via-isp.md) | Dump del firmware stock via ISP | M0 | **Chiuso** (verifica doppia lettura in M0.9) | M |
 | M0.6 | Prova di ripristino del dump | M0 | Bozza | M |
 | M0.7 | Lettura delle code option | M0 | Bozza | M |
-| M0.9 | **Gate G0**: dimostrare l'ingresso in ISP senza l'applicazione | M0 | Bozza | M |
+| [M0.9](M0.9-gate-g0.md) | **Gate G0**: l'ISP funziona senza applicazione? | M0 | **Pronto** | M |
 
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
