@@ -1,0 +1,216 @@
+wildzer0@oblio:~/dev/smk$ sdcc --version
+SDCC : mcs51/z80/z180/r2k/r2ka/r3ka/sm83/tlcs90/ez80_z80/z80n/r800/ds390/TININative/ds400/hc08/s08/stm8/pdk13/pdk14/pdk15/mos6502/mos65c02/f8 TD- 4.5.0 #15242 (Linux)
+published under GNU General Public License (GPL)
+wildzer0@oblio:~/dev/smk$ meson --version
+1.10.2
+wildzer0@oblio:~/dev/smk$ meson setup build -Dbuildtype=release
+The Meson build system
+Version: 1.10.2
+Source dir: /home/wildzer0/dev/smk
+Build dir: /home/wildzer0/dev/smk/build
+Build type: native build
+Project name: smk
+Project version: alpha
+C compiler for the host machine: gcc (gcc 15.2.0 "gcc (GCC) 15.2.0")
+C linker for the host machine: gcc ld.bfd 2.46
+Host machine cpu family: x86_64
+Host machine cpu: x86_64
+Program sdcc found: YES (/nix/store/2jini1drmra6zwc46prmganxby60x9dp-sdcc-4.5.0/bin/sdcc)
+Program sdar found: YES (/nix/store/2jini1drmra6zwc46prmganxby60x9dp-sdcc-4.5.0/bin/sdar)
+Program packihx found: YES (/nix/store/2jini1drmra6zwc46prmganxby60x9dp-sdcc-4.5.0/bin/packihx)
+Program sinowisp found: YES (/nix/store/knmmpikwk1qsg5gr41prxq68v4k13xkb-sinowisp-latest/bin/sinowisp)
+Program sinodude found: YES (/nix/store/b0f0mr7n8b1b39w04y0gcvp1lwpc225v-sinodude-latest/bin/sinodude)
+Program python3 found: YES (/nix/store/60m4rxhg2fldqaak400c0lry96ijrzqn-python3-3.13.13/bin/python3)
+Program cc found: YES (/nix/store/788mx070y81zjlg5ipcl0cra3afviw9k-gcc-wrapper-15.2.0/bin/cc)
+Message: target available: example_default_smk.hex, flash: example_default_flash
+Configuring nuphy-air60_boot_chord.h with command
+Message: target available: nuphy-air60_boot.hex, flash: nuphy-air60_boot_flash
+Configuring nuphy-air60_default_led_geometry.h with command
+Configuring nuphy-air60_default_led_geometry.c with command
+Message: target available: nuphy-air60_default_full.hex, flash: nuphy-air60_default_full_flash
+Message: target available: nuphy-air60_default_smk.hex, flash: nuphy-air60_default_flash
+Configuring eyooso-z11_boot_chord.h with command
+Message: target available: eyooso-z11_boot.hex, flash: eyooso-z11_boot_flash
+Configuring eyooso-z11_default_led_geometry.h with command
+Configuring eyooso-z11_default_led_geometry.c with command
+Message: target available: eyooso-z11_default_full.hex, flash: eyooso-z11_default_full_flash
+Message: target available: eyooso-z11_default_smk.hex, flash: eyooso-z11_default_flash
+Configuring genesis-thor-300_boot_chord.h with command
+Message: target available: genesis-thor-300_boot.hex, flash: genesis-thor-300_boot_flash
+Configuring genesis-thor-300_default_led_geometry.h with command
+Configuring genesis-thor-300_default_led_geometry.c with command
+Message: target available: genesis-thor-300_default_full.hex, flash: genesis-thor-300_default_full_flash
+Message: target available: genesis-thor-300_default_smk.hex, flash: genesis-thor-300_default_flash
+Configuring ciy-x77_boot_chord.h with command
+Message: target available: ciy-x77_boot.hex, flash: ciy-x77_boot_flash
+Configuring ciy-x77_default_led_geometry.h with command
+Configuring ciy-x77_default_led_geometry.c with command
+Message: target available: ciy-x77_default_full.hex, flash: ciy-x77_default_full_flash
+Message: target available: ciy-x77_default_smk.hex, flash: ciy-x77_default_flash
+Configuring ciy-x77_iso_led_geometry.h with command
+Configuring ciy-x77_iso_led_geometry.c with command
+Message: target available: ciy-x77_iso_full.hex, flash: ciy-x77_iso_full_flash
+Message: target available: ciy-x77_iso_smk.hex, flash: ciy-x77_iso_flash
+Program ucsim-sh68f90 found: YES (/nix/store/fj9qjxpls3nq7125xqq7gxlxczkcp4kz-ucsim-sh68f90-4.5.0/bin/ucsim-sh68f90)
+Program python3 found: YES (/nix/store/60m4rxhg2fldqaak400c0lry96ijrzqn-python3-3.13.13/bin/python3)
+Build targets in project: 110
+
+smk alpha
+
+  User defined options
+    buildtype: release
+
+Found ninja-1.13.2 at /nix/store/7a235m7crqbb4h49sak20fqxpw3n7hr0-ninja-1.13.2/bin/ninja
+wildzer0@oblio:~/dev/smk$ meson compile -C build
+INFO: autodetecting backend as ninja
+INFO: calculating backend command to run: /nix/store/7a235m7crqbb4h49sak20fqxpw3n7hr0-ninja-1.13.2/bin/ninja -C /home/wildzer0/dev/smk/build
+ninja: Entering directory `/home/wildzer0/dev/smk/build'
+[318/352] Generating nuphy-air60_boot-check with a custom command
+boot_check: OK — reset at 0xf000, entry stub at 0xff00.
+[319/352] Generating eyooso-z11_boot-check with a custom command
+boot_check: OK — reset at 0xf000, entry stub at 0xff00.
+[321/352] Generating genesis-thor-300_boot-check with a custom command
+boot_check: OK — reset at 0x7000, entry stub at 0x7f00.
+[323/352] Generating ciy-x77_boot-check with a custom command
+boot_check: OK — reset at 0xf000, entry stub at 0xff00.
+[328/352] Generating eyooso-z11_default_interrupt-check with a custom command
+check_interrupts: OK — 14 vectors claimed, 44 ISR-reachable / 115 main-reachable functions, no overlay collisions.
+[331/352] Generating nuphy-air60_default_interrupt-check with a custom command
+check_interrupts: OK — 14 vectors claimed, 44 ISR-reachable / 186 main-reachable functions, no overlay collisions.
+[334/352] Generating genesis-thor-300_default_interrupt-check with a custom command
+check_interrupts: OK — 15 vectors claimed, 73 ISR-reachable / 117 main-reachable functions, no overlay collisions.
+[341/352] Generating ciy-x77_default_interrupt-check with a custom command
+check_interrupts: OK — 15 vectors claimed, 69 ISR-reachable / 131 main-reachable functions, no overlay collisions.
+[345/352] Generating ciy-x77_iso_interrupt-check with a custom command
+check_interrupts: OK — 15 vectors claimed, 69 ISR-reachable / 131 main-reachable functions, no overlay collisions.
+[350/352] Generating example_default_interrupt-check with a custom command
+check_interrupts: OK — 14 vectors claimed, 44 ISR-reachable / 111 main-reachable functions, no overlay collisions.
+[352/352] Generating example_default_smk.hex with a custom command (wrapped by meson to capture output)
+wildzer0@oblio:~/dev/smk$ meson setup build-debug -Dbuildtype=debug
+The Meson build system
+Version: 1.10.2
+Source dir: /home/wildzer0/dev/smk
+Build dir: /home/wildzer0/dev/smk/build-debug
+Build type: native build
+Project name: smk
+Project version: alpha
+C compiler for the host machine: gcc (gcc 15.2.0 "gcc (GCC) 15.2.0")
+C linker for the host machine: gcc ld.bfd 2.46
+Host machine cpu family: x86_64
+Host machine cpu: x86_64
+Program sdcc found: YES (/nix/store/2jini1drmra6zwc46prmganxby60x9dp-sdcc-4.5.0/bin/sdcc)
+Program sdar found: YES (/nix/store/2jini1drmra6zwc46prmganxby60x9dp-sdcc-4.5.0/bin/sdar)
+Program packihx found: YES (/nix/store/2jini1drmra6zwc46prmganxby60x9dp-sdcc-4.5.0/bin/packihx)
+Program sinowisp found: YES (/nix/store/knmmpikwk1qsg5gr41prxq68v4k13xkb-sinowisp-latest/bin/sinowisp)
+Program sinodude found: YES (/nix/store/b0f0mr7n8b1b39w04y0gcvp1lwpc225v-sinodude-latest/bin/sinodude)
+Program python3 found: YES (/nix/store/60m4rxhg2fldqaak400c0lry96ijrzqn-python3-3.13.13/bin/python3)
+Program cc found: YES (/nix/store/788mx070y81zjlg5ipcl0cra3afviw9k-gcc-wrapper-15.2.0/bin/cc)
+Message: target available: example_default_smk.hex, flash: example_default_flash
+Configuring nuphy-air60_boot_chord.h with command
+Message: target available: nuphy-air60_boot.hex, flash: nuphy-air60_boot_flash
+Configuring nuphy-air60_default_led_geometry.h with command
+Configuring nuphy-air60_default_led_geometry.c with command
+Message: target available: nuphy-air60_default_full.hex, flash: nuphy-air60_default_full_flash
+Message: target available: nuphy-air60_default_smk.hex, flash: nuphy-air60_default_flash
+Configuring eyooso-z11_boot_chord.h with command
+Message: target available: eyooso-z11_boot.hex, flash: eyooso-z11_boot_flash
+Configuring eyooso-z11_default_led_geometry.h with command
+Configuring eyooso-z11_default_led_geometry.c with command
+Message: target available: eyooso-z11_default_full.hex, flash: eyooso-z11_default_full_flash
+Message: target available: eyooso-z11_default_smk.hex, flash: eyooso-z11_default_flash
+Configuring genesis-thor-300_boot_chord.h with command
+Message: target available: genesis-thor-300_boot.hex, flash: genesis-thor-300_boot_flash
+Configuring genesis-thor-300_default_led_geometry.h with command
+Configuring genesis-thor-300_default_led_geometry.c with command
+Message: target available: genesis-thor-300_default_full.hex, flash: genesis-thor-300_default_full_flash
+Message: target available: genesis-thor-300_default_smk.hex, flash: genesis-thor-300_default_flash
+Configuring ciy-x77_boot_chord.h with command
+Message: target available: ciy-x77_boot.hex, flash: ciy-x77_boot_flash
+Configuring ciy-x77_default_led_geometry.h with command
+Configuring ciy-x77_default_led_geometry.c with command
+Message: target available: ciy-x77_default_full.hex, flash: ciy-x77_default_full_flash
+Message: target available: ciy-x77_default_smk.hex, flash: ciy-x77_default_flash
+Configuring ciy-x77_iso_led_geometry.h with command
+Configuring ciy-x77_iso_led_geometry.c with command
+Message: target available: ciy-x77_iso_full.hex, flash: ciy-x77_iso_full_flash
+Message: target available: ciy-x77_iso_smk.hex, flash: ciy-x77_iso_flash
+Program ucsim-sh68f90 found: YES (/nix/store/fj9qjxpls3nq7125xqq7gxlxczkcp4kz-ucsim-sh68f90-4.5.0/bin/ucsim-sh68f90)
+Program python3 found: YES (/nix/store/60m4rxhg2fldqaak400c0lry96ijrzqn-python3-3.13.13/bin/python3)
+Build targets in project: 110
+
+smk alpha
+
+  User defined options
+    buildtype: debug
+
+Found ninja-1.13.2 at /nix/store/7a235m7crqbb4h49sak20fqxpw3n7hr0-ninja-1.13.2/bin/ninja
+wildzer0@oblio:~/dev/smk$ meson compile -C build-debug
+INFO: autodetecting backend as ninja
+INFO: calculating backend command to run: /nix/store/7a235m7crqbb4h49sak20fqxpw3n7hr0-ninja-1.13.2/bin/ninja -C /home/wildzer0/dev/smk/build-debug
+ninja: Entering directory `/home/wildzer0/dev/smk/build-debug'
+[315/354] Generating genesis-thor-300_boot-check with a custom command
+boot_check: OK — reset at 0x7000, entry stub at 0x7f00.
+[317/354] Generating eyooso-z11_boot-check with a custom command
+boot_check: OK — reset at 0xf000, entry stub at 0xff00.
+[318/354] Generating nuphy-air60_boot-check with a custom command
+boot_check: OK — reset at 0xf000, entry stub at 0xff00.
+[322/354] Generating ciy-x77_boot-check with a custom command
+boot_check: OK — reset at 0xf000, entry stub at 0xff00.
+[333/354] Generating eyooso-z11_default_interrupt-check with a custom command
+check_interrupts: OK — 14 vectors claimed, 45 ISR-reachable / 133 main-reachable functions, no overlay collisions.
+[335/354] Generating nuphy-air60_default_interrupt-check with a custom command
+check_interrupts: OK — 14 vectors claimed, 45 ISR-reachable / 204 main-reachable functions, no overlay collisions.
+[337/354] Generating genesis-thor-300_default_interrupt-check with a custom command
+check_interrupts: OK — 15 vectors claimed, 74 ISR-reachable / 135 main-reachable functions, no overlay collisions.
+[345/354] Generating ciy-x77_default_interrupt-check with a custom command
+check_interrupts: OK — 15 vectors claimed, 70 ISR-reachable / 151 main-reachable functions, no overlay collisions.
+[349/354] Generating ciy-x77_iso_interrupt-check with a custom command
+check_interrupts: OK — 15 vectors claimed, 70 ISR-reachable / 151 main-reachable functions, no overlay collisions.
+[352/354] Generating example_default_interrupt-check with a custom command
+check_interrupts: OK — 14 vectors claimed, 45 ISR-reachable / 129 main-reachable functions, no overlay collisions.
+[354/354] Generating example_default_smk.hex with a custom command (wrapped by meson to capture output)
+wildzer0@oblio:~/dev/smk$ meson test -C build --print-errorlogs
+ninja: Entering directory `/home/wildzer0/dev/smk/build'
+ninja: no work to do.
+1/1 smk:sim-tests        FAIL           115.50s   exit status 1
+>>> MSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1 MESON_TEST_ITERATION=1 ASAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1 SMK_UCSIM=/nix/store/fj9qjxpls3nq7125xqq7gxlxczkcp4kz-ucsim-sh68f90-4.5.0/bin/ucsim-sh68f90 UBSAN_OPTIONS=halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1 MALLOC_PERTURB_=175 /nix/store/60m4rxhg2fldqaak400c0lry96ijrzqn-python3-3.13.13/bin/python3 -m unittest discover -s /home/wildzer0/dev/smk/tests -t /home/wildzer0/dev/smk/tests
+――――――――――――――――――――――――――――――――――――――――――――――――――――――――― ✀  ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+stdout:
+
+[worst-case stack] deepest reached = 75/222 bytes
+stderr:
+E............................s..............................................
+======================================================================
+ERROR: test_boot_runs_full_init_to_main_loop (test_boot.TestFullBoot.test_boot_runs_full_init_to_main_loop)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/wildzer0/dev/smk/tests/test_boot.py", line 36, in test_boot_runs_full_init_to_main_loop
+    banner = kb.console_text()
+  File "/home/wildzer0/dev/smk/tests/devices.py", line 320, in console_text
+    cb = self._xdata_static("console", "console_buf")
+  File "/home/wildzer0/dev/smk/tests/devices.py", line 313, in _xdata_static
+    raise KeyError("%s$%s not found in .map" % (module, name))
+KeyError: 'console$console_buf not found in .map'
+
+----------------------------------------------------------------------
+Ran 75 tests in 115.417s
+
+FAILED (errors=1, skipped=1)
+――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
+
+
+Summary of Failures:
+
+1/1 smk:sim-tests FAIL           115.50s   exit status 1
+
+Ok:                0
+Fail:              1
+
+Full log written to /home/wildzer0/dev/smk/build/meson-logs/testlog.txt
+wildzer0@oblio:~/dev/smk$ git rev-parse --short HEAD
+dbd5c54
+
+//////////////////////////////////////////////
+Le size combaciano rispetto a quanto riportato in architecture.md (puoi contrllare anche tu. I file sono nelle cartelle di build/build-debug)
+
+Per quanto riguarda il branch l'ho creato ma i commit includono anche i documenti preparati da te. Come vuoi che proceeda?
