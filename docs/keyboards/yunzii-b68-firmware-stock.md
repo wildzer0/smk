@@ -66,7 +66,7 @@ XRAM `0x0305`). Ogni slot rilascia la linea precedente (`SETB`) e abbassa la suc
 * **6 linee di lettura** con pull-up: `P5.3`, `P5.4`, `P7.0`, `P7.1`, `P7.2`, `P7.3` (la ISR compone un byte
   `0xC0 | (P5<<1 & 0x30) | (P7 & 0x0F)` e lo salva in XRAM `0x098E + slot`).
 * Coerenza con la funzione GPIO a `0xA627`: P6 tutta a uscita, P4/P5 uscite a `0x2F`/`0x87` per le strobe, `P5.3/P5.4` e
-  `P7.0–3` ingressi con pull-up. Quindi: **matrice 16 colonne × 6 righe** (colonne = strobe), con 68 tasti dentro.
+  `P7.0–3` ingressi con pull-up. Quindi: **16 colonne** (strobe) e **5 righe fisiche** (`P7.1–3`, `P5.3–4`, le stesse della Air60); `P7.0` è un sesto ingresso letto dallo stock, di funzione ignota, da non trattare come riga finché la sonda non lo spiega.
 * La mappatura *tasto → (colonna, riga)* non si ricava da questi dati: la keymap non è in chiaro (vedi sopra).
 
 ## Ingresso in ISP dall'applicazione
