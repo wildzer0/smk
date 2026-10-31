@@ -31,6 +31,11 @@ keyboards += {
                 'src' : files('layouts/default/layout.c'),
                 'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200', '-DHUD_FORCE_PROTOCOL_1=1'],
             },
+            # lights one LED channel at a time and types a label per step, to find the LED wiring (docs/led-probe.md)
+            'ledprobe' : {
+                'dir' : kb_dir / 'layouts/ledprobe',
+                'src' : files('layouts/ledprobe/layout.c'),
+            },
             # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
             'probe' : {
                 'dir' : kb_dir / 'layouts/probe',

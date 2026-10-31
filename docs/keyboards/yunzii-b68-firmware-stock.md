@@ -99,7 +99,8 @@ Una cattura con l'analizzatore logico durante accensione, cambio modalità (2.4G
 
 * Il firmware pilota **tre banchi PWM da 6 canali**: `PWM0x`, `PWM1x`, `PWM2x`, cioè 18 canali, uno per pin di `P1`, `P2`, `P3` (le tre porte che a riposo sono tutte uscite a 0).
   Sono le **colonne** della matrice dei LED (18 colonne).
-* Le **righe** (pozzi di corrente) non sono ancora identificate. Candidati: uscite che lo stock imposta ma non usa per la matrice dei tasti: `P4.1`, `P7.4`, `P7.5`, `P7.6`, `P0.2`
+* **Ipotesi più forte:** il Timer2 alterna scansione dei tasti e sotto-frame dei LED sugli **stessi 20 slot**: per ogni slot l'ISR carica da una tabella (`0x059C + 0x24 × slot`, 36 byte = 18 duty da 16 bit) i 18 canali PWM, mentre la linea di scansione dello slot è bassa. Quindi le **16 linee di scansione dei tasti (`P6.0–7`, `P5.0/1/2/7`, `P4.0/2/3/5`) sono anche i pozzi dei LED**, e i 18 canali PWM (`P1`, `P2`, `P3`) le sorgenti: 5 righe di tasti × RGB = 15 canali + 3 per il LED di stato. Da confermare con la sonda (`docs/led-probe.md`).
+* Le **righe** (pozzi di corrente) non sono ancora identificate con certezza. Candidati: uscite che lo stock imposta ma non usa per la matrice dei tasti: `P4.1`, `P7.4`, `P7.5`, `P7.6`, `P0.2`
   (quest'ultima è la linea della radio). Il tick del Timer2 alterna una scansione dei tasti (`~320 µs`) e un sotto-frame dei LED.
 * Non si sa ancora se la retroilluminazione è monocromatica o RGB, né se esistono LED di stato separati: dipende dalla tastiera, non dal codice.
 

@@ -593,6 +593,49 @@ class TestB68Hud(TestB68TapHold):
             kb.close()
 
 
+class TestB68LedProbe(unittest.TestCase):
+    """The LED probe types one label per step (A00-A15, B00-B17, C00-C17) once the keyboard has been idle for 5 s."""
+
+    def test_labels_come_in_order(self):
+        firmware = None
+        for d in ("build-b68", "build"):
+            f = REPO_ROOT / d / "yunzii-b68_ledprobe_smk.hex"
+            if f.exists():
+                firmware = str(f)
+        if not firmware:
+            self.skipTest("yunzii-b68_ledprobe_smk.hex not built")
+
+        kb = Air60Sim(firmware=firmware)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            kb.cmd("set mem xram 0x%x 0x00 0x20 0x00 0x00" % kb.sym["timer_now_ms"])  # past the 5 s of waiting: 8192 ms
+            kb.brk(kb._a("user_matrix_read_rows"))
+            for _ in range(2000):  # the test runs inside the main loop and ends when the key scan comes back
+                kb.run()
+                kb.matrix.inject(kb)
+                if len(kb.ep1_reports()) >= 2 * 4 * 52:
+                    break
+            kb.cmd("delete")
+            typed = [r[2] for r in kb.ep1_reports() if r[2]]
+        finally:
+            kb.close()
+
+        def label(letter, number):
+            digit = lambda d: 0x27 if d == 0 else 0x1E + d - 1
+            return [0x04 + (ord(letter) - ord("A")), digit(number // 10), digit(number % 10), 0x2C]
+
+        want = []
+        for n in range(16):
+            want += label("A", n)
+        for n in range(18):
+            want += label("B", n)
+        for n in range(18):
+            want += label("C", n)
+        self.assertEqual(typed[:len(want)], want)
+
+
 class TestB68Encoder(unittest.TestCase):
     """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
 
