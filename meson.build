@@ -15,6 +15,7 @@ dir_base = meson.current_source_dir()
 
 inc_base = [dir_base]
 src_smk = []
+src_via = []
 src_libc = []
 src_kb = []
 src_user = []
@@ -114,6 +115,7 @@ check_interrupts = files('utils/check_interrupts.py')
 # Resolves the bootloader entry chord to matrix positions out of a board's layout,
 # and splices a built bootloader and application into one full-flash image.
 boot_chord_gen = files('utils/boot_chord_gen.py')
+vial_gen = files('utils/vial_gen.py')
 boot_image_gen = files('utils/boot_image.py')
 
 # Fails the build if the linked bootloader does not start where reset lands or
@@ -375,6 +377,17 @@ foreach keyboard, board : keyboards
         endif
 
         src_main += board['src'] + variant['src']
+
+        # Vial: the protocol code plus the board's generated data (definition, id, unlock keys)
+        if options.has_key('vial_json')
+            src_main += src_via
+            src_main += configure_file(
+                output : '@0@_vial_data.c'.format(keyboard),
+                input : board['dir'] / options['vial_json'],
+                command : [py, vial_gen, '@INPUT@', options['vial_uid'], options['vial_unlock']],
+                capture : true,
+            )
+        endif
         inc_dirs += [board['dir'], variant['dir']]
 
         prefix = '@0@_@1@_'.format(keyboard, layout)

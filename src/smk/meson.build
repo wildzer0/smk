@@ -16,4 +16,11 @@ src_smk += files(
     'sleep.c',
     'tick.c',
     'recovery.c',
+    'timer.c',
+)
+
+# Vial/VIA protocol, built only for a board that has a `vial_json` option
+src_via = files(
+    'via.c',
+    'vial.c',
 )

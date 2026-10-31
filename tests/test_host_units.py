@@ -45,5 +45,16 @@ class TestKeymapStore(unittest.TestCase):
                       extra_flags=("-D__xdata=", "-D__code="))
 
 
+class TestVia(unittest.TestCase):
+    def test_via_and_vial(self):
+        build_and_run(self, "tests/host/test_via.c", "src/smk/via.c", "src/smk/vial.c",
+                      extra_flags=("-D__xdata=", "-D__code="))
+
+
+class TestTimer(unittest.TestCase):
+    def test_timer(self):
+        build_and_run(self, "tests/host/test_timer.c", "src/smk/timer.c")
+
+
 if __name__ == "__main__":
     unittest.main()

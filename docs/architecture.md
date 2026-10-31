@@ -544,6 +544,29 @@ Solo per le schede con `keymap_sectors` (oggi la B68, 8 layer).
 * Il riflash dell'applicazione cancella la keymap salvata (come le impostazioni).
 
 
+
+### 11.y Protocollo VIA / Vial (`via.c`, `vial.c`, `timer.c`)
+
+Solo per le schede con l'opzione `vial_json` (oggi la B68). Il livello del protocollo è completo e provato su host; **il
+trasporto USB (Raw HID su EP2, milestone M4.1–M4.4) non c'è ancora**: finché non c'è, nessuno chiama `via_receive()`.
+
+* `via_receive(data, 32)` riscrive la richiesta nel pacchetto di risposta, come `raw_hid_receive()` di QMK. Comandi
+  implementati: protocollo (`0x01`), valori della tastiera (`0x02/0x03`: uptime, opzioni di layout, stato della matrice solo
+  se sbloccata), `get/set_keycode` (`0x04/0x05`), reset (`0x06`), conteggio layer (`0x11`), `get/set_buffer` (`0x12/0x13`,
+  keycode big-endian, layer per layer), macro vuote (`0x0C/0x0D`), `bootloader_jump` (`0x0B`, solo sbloccata). Tutto il resto
+  risponde `0xFF` ("non gestito"), compresi i valori personalizzati (`0x07–0x09`) e il reset EEPROM (`0x0A`).
+* `vial_receive()` gestisce il prefisso `0xFE`: identificatore e versione (6), dimensione e pagine da 32 B della definizione
+  (`vial.json` minificato e compresso LZMA, come fa `vial_generate_definition.py` di vial-qmk), stato/avvio/poll dello
+  sblocco, blocco, e le richieste "nessuna impostazione QMK / nessun tap dance, combo, override".
+* **Sblocco**: si tengono premuti i tasti `vial_unlock_keys` per 50 passi da 100 ms. Un poll più ravvicinato di 100 ms azzera il
+  conteggio (così fa vial-qmk). Mentre lo sblocco è in corso si risponde solo alle domande di sblocco; gli altri comandi vengono
+  rimandati indietro invariati.
+* **Dati di scheda**: `utils/vial_gen.py` produce, da `vial.json` e dalle opzioni meson `vial_uid` e `vial_unlock`, il file
+  `<scheda>_vial_data.c` con definizione, identificatore e tasti di sblocco.
+* **`timer.c`**: orologio in millisecondi. Conta le scansioni della matrice e le converte con la durata misurata di una
+  scansione; con USB attivo la durata viene ri-misurata ogni 256 SOF (1 ms l'uno), perciò l'errore è sotto lo 0,5 %; senza
+  USB mantiene l'ultima misura. Parte da 750 µs per scansione.
+
 ## 12. Indicatori / retroilluminazione
 
 * Interfaccia: [user/indicators.h](../src/user/indicators.h) — `init`, `start`, `render`, `pre_update`,
