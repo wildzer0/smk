@@ -113,85 +113,6 @@ class TestB68Matrix(unittest.TestCase):
         self.assertGreater(len(seen), MATRIX_COLS * 3)
 
 
-def find_probe_firmware():
-    for d in ("build-b68", "build"):
-        f = REPO_ROOT / d / "yunzii-b68_probe_smk.hex"
-        if f.exists():
-            return str(f)
-    return None
-
-
-PROBE_FIRMWARE = find_probe_firmware()
-
-# HID usage of the characters the probe types
-KEY_C, KEY_R, KEY_SPACE = 0x06, 0x15, 0x2C
-KEY_DIGIT = [0x27] + [0x1E + n for n in range(9)]  # 0 then 1..9
-
-
-class TestB68ProbeLayout(unittest.TestCase):
-    """The probe layout types the coordinates of the cell pressed: "c03r2 "."""
-
-    def typed(self, col, row):
-        if not PROBE_FIRMWARE:
-            self.skipTest("yunzii-b68_probe_smk.hex not built")
-        kb = Air60Sim(firmware=PROBE_FIRMWARE)
-        kb.matrix = B68KeyMatrix()
-        try:
-            kb.boot(usb=True)
-            kb.mark_usb_configured()
-            kb.matrix.press(col, row)
-            kb.scan_for_report(max_hits=600)
-            read_rows = kb._a("user_matrix_read_rows")  # let the main loop finish typing
-            kb.brk(read_rows)
-            for _ in range(400):
-                kb.run()
-                kb.matrix.inject(kb)
-            kb.cmd("delete")
-            reports = kb.ep1_reports()
-        finally:
-            kb.close()
-        # a key goes down in one report and up in the next
-        return [r[2] for r in reports if r[2]]
-
-    def test_single_digit_column(self):
-        self.assertEqual(self.typed(3, 2), [KEY_C, KEY_DIGIT[0], KEY_DIGIT[3], KEY_R, KEY_DIGIT[2], KEY_SPACE])
-
-    def test_input_watch_types_a_pin_that_changes(self):
-        if not PROBE_FIRMWARE:
-            self.skipTest("yunzii-b68_probe_smk.hex not built")
-        kb = Air60Sim(firmware=PROBE_FIRMWARE)
-        kb.matrix = B68KeyMatrix()
-        try:
-            kb.boot(usb=True)
-            kb.mark_usb_configured()
-            read_rows = kb._a("user_matrix_read_rows")
-            kb.brk(read_rows)
-            for _ in range(100):  # the watch takes its first reading and starts learning
-                kb.run()
-                kb.matrix.inject(kb)
-            # jump the millisecond clock past the learning time (4 s)
-            now_ms = kb.sym["timer_now_ms"]
-            kb.cmd("set mem xram 0x%x 0x00 0x20 0x00 0x00" % now_ms)  # 0x2000 = 8192 ms
-            for _ in range(60):
-                kb.run()
-                kb.matrix.inject(kb)
-            kb.matrix.p7_forced_low = 0x01  # P7.0 goes low
-            for _ in range(200):
-                kb.run()
-                kb.matrix.inject(kb)
-            kb.cmd("delete")
-            typed = [r[2] for r in kb.ep1_reports() if r[2]]
-        finally:
-            kb.close()
-        KEY_P, KEY_EQUAL = 0x13, 0x2E
-        # the simulator holds P7.0 low in every column too, so "e00=0 ... e15=0 " come with it
-        want = [KEY_P, KEY_DIGIT[7], KEY_DIGIT[0], KEY_EQUAL, KEY_DIGIT[0], KEY_SPACE]  # "p70=0 "
-        self.assertTrue(any(typed[i:i + len(want)] == want for i in range(len(typed))), typed)
-
-    def test_two_digit_column(self):
-        self.assertEqual(self.typed(12, 4), [KEY_C, KEY_DIGIT[1], KEY_DIGIT[2], KEY_R, KEY_DIGIT[4], KEY_SPACE])
-
-
 class TestB68DefaultLayout(unittest.TestCase):
     """The shipped layout: cells found with the probe, keycodes of a 65% ANSI board."""
 
@@ -222,7 +143,9 @@ class TestB68DefaultLayout(unittest.TestCase):
         return self.normalize(reports[-1])
 
     def normalize(self, report):
-        return report
+        # interface 0 reports carry their ID here: [3, mods, reserved, keys...]
+        self.assertEqual(report[0], 3)
+        return report[1:]
 
     def test_letter(self):
         self.assertEqual(self.keys((1, 1))[2], 0x14)  # c1r1 = Q
@@ -241,22 +164,14 @@ class TestB68DefaultLayout(unittest.TestCase):
         self.assertEqual(self.keys((1, 0), held=[(9, 4)])[2], 0x3A)  # Fn + c1r0 = F1
 
 
-def find_rawhid_firmware():
-    for d in ("build-b68", "build"):
-        f = REPO_ROOT / d / "yunzii-b68_rawhid_smk.hex"
-        if f.exists():
-            return str(f)
-    return None
-
-
-RAWHID_FIRMWARE = find_rawhid_firmware()
+RAWHID_FIRMWARE = FIRMWARE  # one build: the raw HID one
 
 
 class TestB68VialIdentity(unittest.TestCase):
     def test_serial_number_has_the_vial_magic(self):
         """Vial's desktop app lists a keyboard only if its USB serial number string contains this."""
         if not RAWHID_FIRMWARE:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+            self.skipTest("yunzii-b68_default_smk.hex not built")
         from sim import read_intel_hex
         mem = read_intel_hex(RAWHID_FIRMWARE)
         image = bytes(mem.get(a, 0xFF) for a in range(max(mem) + 1))
@@ -271,7 +186,7 @@ class TestB68RawHid(unittest.TestCase):
     def exchange(self, *requests):
         """Sends each request in turn (waiting for its reply first) and returns the replies."""
         if not RAWHID_FIRMWARE:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+            self.skipTest("yunzii-b68_default_smk.hex not built")
         kb = Air60Sim(firmware=RAWHID_FIRMWARE)
         kb.matrix = B68KeyMatrix()
         replies = []
@@ -330,28 +245,13 @@ class TestB68RawHid(unittest.TestCase):
         self.assertEqual(replies[1][:2], [0x11, 8])  # eight layers
 
 
-class TestB68RawHidBuildKeys(TestB68DefaultLayout):
-    """The raw HID build types and switches layers exactly like the default one."""
-
-    FIRMWARE_UNDER_TEST = RAWHID_FIRMWARE
-
-    def normalize(self, report):
-        # interface 0 reports carry their ID here: [3, mods, reserved, keys...]
-        self.assertEqual(report[0], 3)
-        return report[1:]
-
-    def setUp(self):
-        if not RAWHID_FIRMWARE:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
-
-
 class TestB68RawHidBuildInterface0(unittest.TestCase):
     """What interface 0 sends in the raw HID build: IDs in report protocol, none in boot protocol,
     and the media keys that used to go out on EP2."""
 
     def run_keys(self, cells, boot_protocol=False):
         if not RAWHID_FIRMWARE:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+            self.skipTest("yunzii-b68_default_smk.hex not built")
         kb = Air60Sim(firmware=RAWHID_FIRMWARE)
         kb.matrix = B68KeyMatrix()
         try:
@@ -376,7 +276,7 @@ class TestB68RawHidBuildInterface0(unittest.TestCase):
         # Fn + the arrow-down key is volume down on the Fn layer
         kb = Air60Sim(firmware=RAWHID_FIRMWARE) if RAWHID_FIRMWARE else None
         if not kb:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+            self.skipTest("yunzii-b68_default_smk.hex not built")
         kb.matrix = B68KeyMatrix()
         try:
             kb.boot(usb=True)
@@ -404,7 +304,7 @@ class TestB68TapHold(unittest.TestCase):
 
     def session(self):
         if not RAWHID_FIRMWARE:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+            self.skipTest("yunzii-b68_default_smk.hex not built")
         kb = Air60Sim(firmware=RAWHID_FIRMWARE)
         kb.matrix = B68KeyMatrix()
         kb.boot(usb=True)
@@ -515,7 +415,7 @@ class TestB68MacroFromTheStore(TestB68TapHold):
 
     def session_with_slot(self, slot):
         if not RAWHID_FIRMWARE:
-            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+            self.skipTest("yunzii-b68_default_smk.hex not built")
         kb = Air60Sim(firmware=RAWHID_FIRMWARE)
         kb.matrix = B68KeyMatrix()
         for offset in range(0, len(slot), 64):
@@ -593,92 +493,6 @@ class TestB68Hud(TestB68TapHold):
             kb.close()
 
 
-class TestB68LedProbe(unittest.TestCase):
-    """The LED probe types one label per step (A00-A15, B00-B17, C00-C17) once the keyboard has been idle for 5 s."""
-
-    def test_labels_come_in_order(self):
-        firmware = None
-        for d in ("build-b68", "build"):
-            f = REPO_ROOT / d / "yunzii-b68_ledprobe_smk.hex"
-            if f.exists():
-                firmware = str(f)
-        if not firmware:
-            self.skipTest("yunzii-b68_ledprobe_smk.hex not built")
-
-        kb = Air60Sim(firmware=firmware)
-        kb.matrix = B68KeyMatrix()
-        try:
-            kb.boot(usb=True)
-            kb.mark_usb_configured()
-            kb.cmd("set mem xram 0x%x 0x00 0x20 0x00 0x00" % kb.sym["timer_now_ms"])  # past the 5 s of waiting: 8192 ms
-            kb.brk(kb._a("user_matrix_read_rows"))
-            for _ in range(2000):  # the test runs inside the main loop and ends when the key scan comes back
-                kb.run()
-                kb.matrix.inject(kb)
-                if len(kb.ep1_reports()) >= 2 * 4 * 52:
-                    break
-            kb.cmd("delete")
-            typed = [r[2] for r in kb.ep1_reports() if r[2]]
-        finally:
-            kb.close()
-
-        def label(letter, number):
-            digit = lambda d: 0x27 if d == 0 else 0x1E + d - 1
-            return [0x04 + (ord(letter) - ord("A")), digit(number // 10), digit(number % 10), 0x2C]
-
-        want = []
-        for n in range(16):
-            want += label("A", n)
-        for n in range(18):
-            want += label("B", n)
-        for n in range(18):
-            want += label("C", n)
-        self.assertEqual(typed[:len(want)], want)
-
-
-class TestB68LedProbe2(unittest.TestCase):
-    """The second LED probe: D00-D06, E00-E31, F00-F11."""
-
-    def test_labels_come_in_order(self):
-        firmware = None
-        for d in ("build-b68", "build"):
-            f = REPO_ROOT / d / "yunzii-b68_ledprobe2_smk.hex"
-            if f.exists():
-                firmware = str(f)
-        if not firmware:
-            self.skipTest("yunzii-b68_ledprobe2_smk.hex not built")
-
-        kb = Air60Sim(firmware=firmware)
-        kb.matrix = B68KeyMatrix()
-        try:
-            kb.boot(usb=True)
-            kb.mark_usb_configured()
-            kb.cmd("set mem xram 0x%x 0x00 0x20 0x00 0x00" % kb.sym["timer_now_ms"])
-            kb.brk(kb._a("user_matrix_read_rows"))
-            for _ in range(2000):
-                kb.run()
-                kb.matrix.inject(kb)
-                if len(kb.ep1_reports()) >= 2 * 4 * 51:
-                    break
-            kb.cmd("delete")
-            typed = [r[2] for r in kb.ep1_reports() if r[2]]
-        finally:
-            kb.close()
-
-        def label(letter, number):
-            digit = lambda d: 0x27 if d == 0 else 0x1E + d - 1
-            return [0x04 + (ord(letter) - ord("A")), digit(number // 10), digit(number % 10), 0x2C]
-
-        want = []
-        for n in range(7):
-            want += label("D", n)
-        for n in range(32):
-            want += label("E", n)
-        for n in range(12):
-            want += label("F", n)
-        self.assertEqual(typed[:len(want)], want)
-
-
 class TestB68Leds(unittest.TestCase):
     """The backlight driver: the effect becomes PWM widths on the 15 colour channels, DUTY2 = DUTY1 + width."""
 
@@ -751,7 +565,7 @@ class TestB68Encoder(unittest.TestCase):
         finally:
             kb.close()
         return [[int(x, 16) for x in m.split()]
-                for m in re.findall(r"\[SIE\] EP2 IN \d+ bytes:((?: [0-9a-f]{2})*)", text)]
+                for m in re.findall(r"\[SIE\] EP1 IN \d+ bytes:((?: [0-9a-f]{2})*)", text)]
 
     # (A, B): 00 -> 10 -> 11 -> 01 -> 00 is the direction seen first on the board
     FIRST_WAY = [(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]

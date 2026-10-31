@@ -503,3 +503,11 @@ Ancora aperte:
 1. L'**Arduino Nano** che hai scelto va bene se è un ATmega328P (vedi [recovery-icp.md §2](recovery-icp.md#2-larduino-che-hai-trovato-va-bene)): quando arriva, leggi la signature (M0.3).
 2. Quale variante esatta della B68 (versione PCB, RGB per-key o no, 2.4G con dongle, batteria)? Foto del PCB e dell'etichetta.
 3. Vuoi restare **solo personale** o puntare a una PR upstream (impatta D6 e la pulizia del codice)?
+
+
+## 2026-10-31: una sola build, solo B68, LED più fluidi
+
+* Il layout `default` della B68 è ora l'unico e include raw HID (Vial/VIA/HUD) e `bcdDevice` 0x0200; rimossi `rawhid`, `hudv1`, `probe`, `ledprobe`, `ledprobe2`.
+* Nuova opzione `-Dboards=yunzii-b68`: configura solo la B68 (vuota = tutte le schede).
+* Flicker LED: `LED_SUBFRAMES_PER_SCAN` 2 → 4 (cornice ≈ 8 ms). Da verificare sulla tastiera. LED di stato che pulsa: causa non nota.
+* Test: 45 test B68 + unità host passano. I test delle altre schede (boot, usb, ...) richiedono la build completa.

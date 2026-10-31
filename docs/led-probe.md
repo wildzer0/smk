@@ -1,5 +1,8 @@
 # Sonda dei LED: come si usa
 
+> **Nota (rimossa dalla build):** il layout di diagnosi descritto qui è stato tolto dal repository; resta nella storia git (commit `bd19894` e precedenti). Esiste una sola build di rilascio.
+
+
 Serve a scoprire **quali pin accendono quali LED** della B68 (RGB sotto i tasti). Non cambia nulla in memoria e non richiede di aprire la tastiera.
 
 ## Cosa fa

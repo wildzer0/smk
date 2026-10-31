@@ -100,6 +100,7 @@
 #define B68_SPD_DN  0x7E05
 #define B68_SPD_UP  0x7E06
 
-// Two LED subframes per key scan: the scan takes about 320 us and a subframe lights one column for 400 us, so a frame of 16 columns
-// refreshes at roughly 55 Hz.
-#define LED_SUBFRAMES_PER_SCAN 2
+// Four LED subframes per key scan: a subframe lights one column for 400 us and a scan takes about 320 us (plus 100 us before the next
+// slot), so a frame of 16 columns takes about 8 ms (125 Hz) and a key is polled every 2 ms. With one or two subframes per scan the
+// frame was 55-100 Hz, which is visible as flicker because each column is lit for only a few percent of the frame.
+#define LED_SUBFRAMES_PER_SCAN 4

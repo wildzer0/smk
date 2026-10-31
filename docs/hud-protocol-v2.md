@@ -88,4 +88,4 @@ aspettarsi che compaiano.
 
 * Firmware: `tests/host/test_hud.c` (compilato due volte: matrice 2×3 → protocollo 1, matrice 5×16 → protocollo 2) e `TestB68Hud` nel simulatore.
 * In pratica: `tools/rawhid-test.html` (WebHID) ha i pulsanti **HUD info / state / keymap / matrix** che mostrano le risposte esatte della tastiera collegata.
-* Il firmware di diagnosi `yunzii-b68_hudv1_smk.hex` risponde come tastiera v1 a 8 colonne (mostra solo le colonne 0–7), utile per confrontare il comportamento dell'app.
+* Il firmware di diagnosi `hudv1` (risposta come tastiera v1 a 8 colonne) è stato rimosso; si può ricostruire con `-DHUD_FORCE_PROTOCOL_1=1`.

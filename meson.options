@@ -63,3 +63,9 @@ option(
     value : '/dev/ttyUSB0',
     description : 'Serial port of the sinodude-serial programmer, used by the *_full_flash targets that write the stitched bootloader-plus-application image over ICP. Ignored for sinolink. On macOS this is a /dev/cu.usbserial-* path.',
 )
+option(
+    'boards',
+    type : 'array',
+    value : [],
+    description : 'Keyboards to configure and build, by directory name under src/keyboards. Empty builds every board.',
+)

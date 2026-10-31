@@ -12,40 +12,12 @@ keyboards += {
             'kb.c',
         ),
         'layouts' : {
+            # the only release build: keyboard, media and ISP on interface 0, raw HID (VIA, Vial, HUD) on
+            # interface 1. bcdDevice changes with the descriptors: 0x0200 = this layout of interfaces
             'default' : {
                 'dir' : kb_dir / 'layouts/default',
                 'src' : files('layouts/default/layout.c', 'layouts/default/indicators.c'),
-            },
-            # the default layout with the raw HID interface on EP2 (spike S1). Media keys and the ISP
-            # report are not available in this build: enter the bootloader with the recovery chord
-            'rawhid' : {
-                'dir' : kb_dir / 'layouts/default',
-                'src' : files('layouts/default/layout.c', 'layouts/default/indicators.c'),
-                # bcdDevice changes with the descriptors: 0x0200 = keyboard, media and ISP on interface 0 + raw HID
                 'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200'],
-            },
-            # the rawhid build that answers the HUD as a protocol 1 keyboard with 8 columns, to find out whether an
-            # app that does not know protocol 2 connects (diagnostic only: it shows just the first 8 columns)
-            'hudv1' : {
-                'dir' : kb_dir / 'layouts/default',
-                'src' : files('layouts/default/layout.c', 'layouts/default/indicators.c'),
-                'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200', '-DHUD_FORCE_PROTOCOL_1=1'],
-            },
-            # lights one LED channel at a time and types a label per step, to find the LED wiring (docs/led-probe.md)
-            'ledprobe' : {
-                'dir' : kb_dir / 'layouts/ledprobe',
-                'src' : files('layouts/ledprobe/layout.c'),
-            },
-            # second LED test: the status LED and the PWM waveform
-            'ledprobe2' : {
-                'dir' : kb_dir / 'layouts/ledprobe',
-                'src' : files('layouts/ledprobe/layout.c'),
-                'args' : ['-DLED_STAGE=2'],
-            },
-            # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
-            'probe' : {
-                'dir' : kb_dir / 'layouts/probe',
-                'src' : files('layouts/probe/layout.c'),
             },
         },
         'options' : {

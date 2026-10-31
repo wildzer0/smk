@@ -1,5 +1,8 @@
 # Sonda software per la radio (senza aprire la tastiera)
 
+> **Nota (rimossa dalla build):** il layout di diagnosi descritto qui è stato tolto dal repository; resta nella storia git (commit `bd19894` e precedenti). Esiste una sola build di rilascio.
+
+
 Cosa si può sapere **senza** analizzatore: quali ingressi si muovono da soli, cioè quali pin dell'MCU sono collegati a qualcosa che parla (la radio). Non permette di decodificare i frame.
 
 Il layout `probe` (build `yunzii-b68_probe_smk.hex`), dopo 4 s dall'accensione senza toccare nulla, scrive una riga come

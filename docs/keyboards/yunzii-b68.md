@@ -181,3 +181,15 @@ Code option e prova di ripristino: M0.6/M0.7 (ancora da fare).
 64 KiB) e coincidono con la rilettura di M0.9. Rispetto al primo `full.hex` differiscono solo 2 byte: `0xC60A`
 (0x11→0x08) e `0xC65A` (0x04→0x01), cioè dati di stato scritti dal firmware stock in una zona a 0xC600.
 Il backup è affidabile. **Dump canonico: `backups/dump/r1.bin`** (binario, 65536 B); gli `.hex` restano come copie.
+
+## Build di rilascio (unica)
+
+Esiste un solo layout, `default`, con interfaccia raw HID (VIA, Vial, HUD), `bcdDevice` 0x0200 e retroilluminazione RGB.
+Per compilare **solo la B68** (senza NuPhy e le altre schede):
+
+```
+nix develop --command bash -c 'meson setup build -Dboards=yunzii-b68 --buildtype=release && meson compile -C build'
+```
+
+Il file da flashare è `build/yunzii-b68_default_smk.hex`. Il flicker dei LED: `LED_SUBFRAMES_PER_SCAN` è 4 (cornice di 16 colonne
+≈ 8 ms, 125 Hz; prima 55–100 Hz).
