@@ -4,6 +4,8 @@ src_smk += files(
     'host.c',
     'usb.c',
     'matrix.c',
+    'layer.c',
+    'keymap.c',
     'report.c',
     'keyboard.c',
     'console.c',

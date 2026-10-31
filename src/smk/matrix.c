@@ -10,6 +10,7 @@
 #include "delay.h"
 #include "indicators.h"
 #include "sleep.h"
+#include "layer.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -20,14 +21,9 @@ matrix_col_t matrix_previous[MATRIX_COLS];
 
 volatile bool matrix_updated;
 
-uint8_t action_layer;
-
-uint8_t default_layer;
-
 void matrix_init()
 {
-    action_layer   = 0;
-    default_layer  = 0;
+    layer_init();
     matrix_updated = false;
 
     for (int i = 0; i < MATRIX_COLS; i++) {
@@ -38,17 +34,19 @@ void matrix_init()
 
 void set_default_layer(uint8_t layer)
 {
-    default_layer = layer;
+    layer_set_default(layer);
 }
 
-static uint16_t resolve_keycode(uint16_t base, uint8_t row, uint8_t col)
+void layer_hook_mods_add(uint8_t mods)
 {
-    if (!action_layer) {
-        return base;
-    }
+    add_mods(mods);
+    send_keyboard_report();
+}
 
-    const uint16_t overlay = keymaps[action_layer][row][col];
-    return (overlay == KC_TRANSPARENT) ? base : overlay;
+void layer_hook_mods_del(uint8_t mods)
+{
+    del_mods(mods);
+    send_keyboard_report();
 }
 
 static void send_keycode(uint16_t qcode, bool pressed)
@@ -86,29 +84,23 @@ static void send_keycode(uint16_t qcode, bool pressed)
 
 static void process_key_state(uint8_t row, uint8_t col, bool pressed)
 {
-    const uint16_t base = keymaps[default_layer][row][col];
+    const uint16_t qcode = pressed ? layer_key_down(row, col) : layer_key_up(row, col);
 
-    if (IS_QK_MOMENTARY(base)) {
-        if (pressed) {
-            action_layer = QK_MOMENTARY_GET_LAYER(base);
-        } else {
-            clear_keys();
-            action_layer = 0;
-        }
+    if (layer_process(qcode, pressed)) {
         return;
     }
 
-    const uint16_t qcode = resolve_keycode(base, row, col);
-
-    if (!kb_process_record(qcode, pressed)) {
-        return;
+    if (pressed) {
+        layer_key_pressed();
     }
 
-    if (!layout_process_record(qcode, pressed)) {
-        return;
+    if (kb_process_record(qcode, pressed) && layout_process_record(qcode, pressed)) {
+        send_keycode(qcode, pressed);
     }
 
-    send_keycode(qcode, pressed);
+    if (!pressed) {
+        layer_key_released();
+    }
 }
 
 void matrix_scan_full(void)

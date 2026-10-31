@@ -31,3 +31,5 @@ const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         { KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS }
     }
 };
+
+const uint8_t keymap_layers = sizeof(keymaps) / sizeof(keymaps[0]);

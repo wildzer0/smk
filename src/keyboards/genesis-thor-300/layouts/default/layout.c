@@ -78,3 +78,5 @@ const uint16_t keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 // clang-format on
+
+const uint8_t keymap_layers = sizeof(keymaps) / sizeof(keymaps[0]);

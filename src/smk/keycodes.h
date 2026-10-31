@@ -1384,6 +1384,27 @@ enum keycode_aliases {
 #define MO(layer) (QK_MOMENTARY | ((layer)&0x1F))
 #define QK_MOMENTARY_GET_LAYER(kc) ((kc)&0x1F)
 
+// Switch to a layer and turn every other one off
+#define TO(layer) (QK_TO | ((layer)&0x1F))
+// Toggle a layer on or off
+#define TG(layer) (QK_TOGGLE_LAYER | ((layer)&0x1F))
+// Set the default layer
+#define DF(layer) (QK_DEF_LAYER | ((layer)&0x1F))
+// One-shot layer: active for the next key press
+#define OSL(layer) (QK_ONE_SHOT_LAYER | ((layer)&0x1F))
+// One-shot modifier: active for the next key press. `mod` is MOD_x, or MOD_x | MOD_y.
+#define OSM(mod) (QK_ONE_SHOT_MOD | ((mod)&0x1F))
+
+// Modifier masks for OSM (QMK encoding: bit 4 moves the modifiers to the right hand)
+#define MOD_LCTL 0x01
+#define MOD_LSFT 0x02
+#define MOD_LALT 0x04
+#define MOD_LGUI 0x08
+#define MOD_RCTL 0x11
+#define MOD_RSFT 0x12
+#define MOD_RALT 0x14
+#define MOD_RGUI 0x18
+
 // Range Helpers
 #define IS_QK_BASIC(code) ((code) >= QK_BASIC && (code) <= QK_BASIC_MAX)
 #define IS_QK_MODS(code) ((code) >= QK_MODS && (code) <= QK_MODS_MAX)

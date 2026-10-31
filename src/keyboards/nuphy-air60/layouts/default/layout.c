@@ -133,3 +133,5 @@ bool layout_process_record(uint16_t keycode, bool key_pressed)
             return true;
     }
 }
+
+const uint8_t keymap_layers = sizeof(keymaps) / sizeof(keymaps[0]);
