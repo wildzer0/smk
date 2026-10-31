@@ -12,3 +12,5 @@ __pycache__/
 
 # Cargo build dir (tools/smk-console)
 target/
+
+backups/

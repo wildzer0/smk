@@ -59,7 +59,20 @@ Il report grezzo di M0.1 è in [tasks/M0.1-report.txt](../tasks/M0.1-report.txt)
 
 ## Dump del firmware stock (M0.5–M0.7)
 
-*Da compilare: hash del dump, code option, esito della prova di ripristino.*
+Dump eseguito via ISP (M0.5), file in `backups/` (ignorato da git, fuori dal repo: tenere anche una copia su altro disco).
+
+| File | Contenuto | sha256 |
+| --- | --- | --- |
+| `full.hex` | flash completa 0x0000–0xFFFF (64 KiB) | `ce6f7b83…d1ddcf9184` |
+| `firmware.hex` | = `full` 0x0000–0xEFFF | `2aad0baf…c96060` |
+| `bootloader.hex` | = `full` 0xF000–0xFFFF, ma indirizzato da 0x0000 nell'hex | `e1f44081…37ddab` |
+
+Verifica incrociata fatta da Claude: firmware e bootloader sono coerenti con `full`. Osservazioni sullo stock:
+reset vector `0x0000: LJMP 0x9A26` (punta all'applicazione, non al bootloader come in SMK); bootloader stock a 0xF000
+inizia con `clr EA; mov SP,#0x70`; nessuno stub tipo `ISP_ENTRY` evidente a 0xFF00. Da usare per il gate G0.
+**Attenzione:** per ripristinare il bootloader da `bootloader.hex` va rispostato a 0xF000.
+
+Code option e prova di ripristino: M0.6/M0.7 (ancora da fare).
 
 ## Gate G0 (M0.9)
 
