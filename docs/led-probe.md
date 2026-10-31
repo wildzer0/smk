@@ -46,3 +46,22 @@ B03 1 rosso
 ## Sicurezza
 
 Un solo canale per volta, a luminosità ridotta. Se noti un tasto che scalda, odore o lampeggi anomali, scollega l'USB e dimmelo.
+
+---
+
+# Seconda sonda (`yunzii-b68_ledprobe2_smk.hex`)
+
+La prima sonda ha dato la mappa dei LED dei tasti (vedi [keyboards/yunzii-b68.md](keyboards/yunzii-b68.md)). Restano due cose: **il LED di stato** accanto al Caps e **come la larghezza dell'impulso PWM diventa
+luminosità**. Stessa procedura (flasha, editor aperto, 5 s di mani lontane, ~80 s di test), ma le etichette sono queste:
+
+| Etichetta | Cosa viene acceso | Cosa annotare |
+| --- | --- | --- |
+| `D00`…`D03` | le uscite `P4.1`, `P7.4`, `P7.5`, `P7.6` alte una alla volta (colonne a riposo) | si accende il LED di stato? di che colore? |
+| `D04`…`D06` | colonne `P1.0`, `P1.1`, `P1.2` alte una alla volta (le quattro uscite sopra a riposo, basse) | LED di stato acceso? di che colore? |
+| `E00`…`E15` | colonna `P1.1` alta, linea di scansione 0…15 bassa | si accende un LED (anche il LED di stato)? |
+| `E16`…`E31` | colonna `P1.2` alta, linea di scansione 0…15 bassa | idem |
+| `F00`…`F05` | **PWM hardware** sul rosso del tasto Esc, impulso di larghezza 0, 30, 120, 300, 600, 1100 (DUTY2 = DUTY1 + larghezza) | luminosità di Esc: spento / fioco / medio / forte / pieno |
+| `F06`…`F11` | lo stesso con i registri scambiati (DUTY1 = DUTY2 + larghezza) | luminosità di Esc |
+
+Per le righe F ti basta dire, per ciascuna, se Esc è spento, debole, medio o forte, e se è rosso: dal confronto tra F00–F05 e F06–F11 ricavo la polarità dell'uscita PWM e la curva.
+Se in `D` o `E` si accende qualcosa di non previsto (per esempio un LED accanto al Caps), scrivilo con l'etichetta.

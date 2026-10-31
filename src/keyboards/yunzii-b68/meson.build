@@ -36,6 +36,12 @@ keyboards += {
                 'dir' : kb_dir / 'layouts/ledprobe',
                 'src' : files('layouts/ledprobe/layout.c'),
             },
+            # second LED test: the status LED and the PWM waveform
+            'ledprobe2' : {
+                'dir' : kb_dir / 'layouts/ledprobe',
+                'src' : files('layouts/ledprobe/layout.c'),
+                'args' : ['-DLED_STAGE=2'],
+            },
             # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
             'probe' : {
                 'dir' : kb_dir / 'layouts/probe',

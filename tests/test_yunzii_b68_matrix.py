@@ -636,6 +636,49 @@ class TestB68LedProbe(unittest.TestCase):
         self.assertEqual(typed[:len(want)], want)
 
 
+class TestB68LedProbe2(unittest.TestCase):
+    """The second LED probe: D00-D06, E00-E31, F00-F11."""
+
+    def test_labels_come_in_order(self):
+        firmware = None
+        for d in ("build-b68", "build"):
+            f = REPO_ROOT / d / "yunzii-b68_ledprobe2_smk.hex"
+            if f.exists():
+                firmware = str(f)
+        if not firmware:
+            self.skipTest("yunzii-b68_ledprobe2_smk.hex not built")
+
+        kb = Air60Sim(firmware=firmware)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            kb.cmd("set mem xram 0x%x 0x00 0x20 0x00 0x00" % kb.sym["timer_now_ms"])
+            kb.brk(kb._a("user_matrix_read_rows"))
+            for _ in range(2000):
+                kb.run()
+                kb.matrix.inject(kb)
+                if len(kb.ep1_reports()) >= 2 * 4 * 51:
+                    break
+            kb.cmd("delete")
+            typed = [r[2] for r in kb.ep1_reports() if r[2]]
+        finally:
+            kb.close()
+
+        def label(letter, number):
+            digit = lambda d: 0x27 if d == 0 else 0x1E + d - 1
+            return [0x04 + (ord(letter) - ord("A")), digit(number // 10), digit(number % 10), 0x2C]
+
+        want = []
+        for n in range(7):
+            want += label("D", n)
+        for n in range(32):
+            want += label("E", n)
+        for n in range(12):
+            want += label("F", n)
+        self.assertEqual(typed[:len(want)], want)
+
+
 class TestB68Encoder(unittest.TestCase):
     """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
 

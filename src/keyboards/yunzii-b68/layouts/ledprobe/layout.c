@@ -8,6 +8,7 @@
 #include "tick.h"
 #include "watchdog.h"
 #include "user_matrix.h"
+#include "pwm.h"
 #include <stdint.h>
 
 // clang-format off
@@ -90,6 +91,11 @@ const uint8_t keymap_layers = sizeof(keymaps) / sizeof(keymaps[0]);
 //
 // Column k is P1.(k) for k < 6, P2.(k-6) for 6 <= k < 12, P3.(k-12) for k >= 12.
 
+// LED_STAGE 1 (default): A, B, C below. LED_STAGE 2: the status LED and the PWM waveform (D, E, F), see run_led_test().
+#ifndef LED_STAGE
+#    define LED_STAGE 1
+#endif
+
 #define START_MS 5000u // hands off the keyboard until it starts
 #define STEP_MS  1500u
 #define STEP_LOOPS 3750u // STEP_MS / 0.4 ms
@@ -162,10 +168,86 @@ static void light(uint8_t k, uint8_t sink)
     user_matrix_col_deselect(sink);
 }
 
+// Lights `pin` ("P4.1" and so on, by port and bit) high for STEP_MS at about 25 % duty, columns left low (idle).
+static void extra_pin(uint8_t port, uint8_t bit, bool high)
+{
+    const uint8_t mask = (uint8_t)(1u << bit);
+
+    if (port == 4) {
+        if (high) {
+            P4 |= mask;
+        } else {
+            P4 &= (uint8_t)~mask;
+        }
+    } else {
+        if (high) {
+            P7 |= mask;
+        } else {
+            P7 &= (uint8_t)~mask;
+        }
+    }
+}
+
+static void pulse_extra_source(uint8_t port, uint8_t bit)
+{
+    for (uint16_t loop = 0; loop < STEP_LOOPS; loop++) {
+        if ((loop & 3u) == 0) {
+            watchdog_kick();
+        }
+        extra_pin(port, bit, true);
+        delay_us(100);
+        extra_pin(port, bit, false);
+        delay_us(300);
+    }
+}
+
+// The same pulsing on a column pin, the strobes left alone (the extra pins stay low, as at rest).
+static void pulse_column(uint8_t k)
+{
+    for (uint16_t loop = 0; loop < STEP_LOOPS; loop++) {
+        if ((loop & 3u) == 0) {
+            watchdog_kick();
+        }
+        column_pin(k, true);
+        delay_us(100);
+        column_pin(k, false);
+        delay_us(300);
+    }
+}
+
+static void hold_ms(uint16_t ms)
+{
+    while (ms--) {
+        watchdog_kick();
+        delay_ms(1);
+    }
+}
+
+// Column 3 (P1.3, the red of the top row) on the hardware PWM, the way the stock firmware sets it up (period 1200 counts), with
+// the top-left key's strobe held low. DUTY1 is where the output goes one way and DUTY2 where it comes back; the width between
+// them is the brightness. Tried both ways round, so the one that gives a proportional light shows which polarity it is.
+static void pwm_step(uint16_t duty1, uint16_t duty2)
+{
+    PWM2PERDH = 0x04;
+    PWM2PERDL = 0xB0;
+    SET_PWM_DUTY_1(PWM23, duty1);
+    SET_PWM_DUTY_2(PWM23, duty2);
+    PWM23CON = 0x08; // the values the stock firmware writes: the first channel of a bank starts the bank
+    PWM20CON = 0x89;
+
+    user_matrix_col_select(0);
+    hold_ms(STEP_MS);
+    user_matrix_col_deselect(0);
+
+    PWM20CON = 0;
+    PWM23CON = 0;
+}
+
 static void run_led_test(void)
 {
     tick_pause(); // the key scan would drive the same lines
 
+#if LED_STAGE == 1
     for (uint8_t sink = 0; sink < 16; sink++) {
         type_label('A', sink);
         light(0, sink);
@@ -178,6 +260,37 @@ static void run_led_test(void)
         type_label('C', k);
         light(k, 8);
     }
+#else
+    static const __code uint8_t extras[4][2] = { { 4, 1 }, { 7, 4 }, { 7, 5 }, { 7, 6 } }; // port, bit
+
+    // D00-D03: each extra output as a SOURCE (high), the LED columns at rest (low)
+    for (uint8_t i = 0; i < 4; i++) {
+        type_label('D', i);
+        pulse_extra_source(extras[i][0], extras[i][1]);
+    }
+    // D04-D06: the extra outputs as SINKS (they are low at rest), one LED column pulsed high: 0, 1, 2
+    for (uint8_t k = 0; k < 3; k++) {
+        type_label('D', (uint8_t)(4 + k));
+        pulse_column(k);
+    }
+    // E00-E15: column 1 high, strobe 0..15 low; E16-E31: the same with column 2
+    for (uint8_t k = 1; k <= 2; k++) {
+        for (uint8_t sink = 0; sink < 16; sink++) {
+            type_label('E', (uint8_t)((k - 1) * 16 + sink));
+            light(k, sink);
+        }
+    }
+    // F00-F05: PWM, DUTY1 = 198, DUTY2 = DUTY1 + width. F06-F11: DUTY2 = 198, DUTY1 = DUTY2 + width.
+    static const __code uint16_t widths[6] = { 0, 30, 120, 300, 600, 1100 };
+    for (uint8_t i = 0; i < 6; i++) {
+        type_label('F', i);
+        pwm_step(198, (uint16_t)(198 + widths[i]));
+    }
+    for (uint8_t i = 0; i < 6; i++) {
+        type_label('F', (uint8_t)(6 + i));
+        pwm_step((uint16_t)(198 + widths[i]), 198);
+    }
+#endif
 
     user_matrix_cols_deselect_all();
     tick_resume();

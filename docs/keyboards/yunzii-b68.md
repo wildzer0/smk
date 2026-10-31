@@ -120,6 +120,27 @@ Il testo della sonda si interrompeva dopo ~5 s perché la sonda scrive al massim
 LED **RGB** sotto i tasti, montati sul lato **sud** dell'interruttore (la parte verso l'utente); un **LED di stato** vicino al tasto Caps Lock. Probabile uso del LED di stato: Caps Lock e/o indicatori di
 batteria o di collegamento. Da confermare osservando cosa fa con il firmware stock (accensione, cambio di modalità, batteria scarica, Caps Lock).
 
+## LED RGB (sonda 1, 2026-10-31)
+
+Verificato con la sonda `ledprobe` (un canale per volta, colonna alta + linea di scansione bassa):
+
+* **Il pozzo di un LED è la linea di scansione della colonna di tasti**: accendendo il pozzo `s` si illuminano i tasti della colonna `s` (A: tutti i pozzi 0–15 con il canale 0 non accendono nulla perché
+  il canale 0 non è una colonna LED; B/C: pozzo 0 → Esc, Tab, Caps, LCtrl, LShift; pozzo 8 → 8, I, K, RAlt, virgola, cioè i tasti della colonna 0 e della colonna 8).
+* **Le sorgenti (colonne LED) sono i canali 3–17**, tre per riga di tasti, nell'ordine rosso, verde, blu:
+
+| Riga di tasti | Canali (R, G, B) | Pin |
+| --- | --- | --- |
+| 0 (Esc 1 2 …) | 3, 4, 5 | `P1.3`, `P1.4`, `P1.5` |
+| 1 (Tab Q W …) | 6, 7, 8 | `P2.0`, `P2.1`, `P2.2` |
+| 2 (Caps A S …) | 9, 10, 11 | `P2.3`, `P2.4`, `P2.5` |
+| 3 (Shift Z X …) | 15, 16, 17 | `P3.3`, `P3.4`, `P3.5` |
+| 4 (Ctrl Win Alt …) | 12, 13, 14 | `P3.0`, `P3.1`, `P3.2` |
+
+  (canale `k`: `P1.k` per k<6, `P2.(k−6)` per 6≤k<12, `P3.(k−12)` per k≥12.) La riga 3 e la riga 4 sono quindi scambiate rispetto all'ordine dei canali.
+* Il LED del tasto in colonna `c`, riga `r` si accende con il pozzo `c` basso e il suo canale colore alto. 67 tasti × RGB.
+* **Non ancora identificati:** i canali 0, 1, 2 (`P1.0–2`) non accendono nessun tasto con nessun pozzo (A) e il LED di stato vicino al Caps. Seconda sonda: `ledprobe2`.
+* **Non ancora noto:** come si traduce la larghezza dell'impulso PWM in luminosità e con quale polarità (la sonda 2 lo prova).
+
 ## Hardware (M0.4)
 
 *Da compilare: foto PCB, pad ICP, pinout.*
