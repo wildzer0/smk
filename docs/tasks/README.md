@@ -34,6 +34,8 @@ un branch/PR. **Dal 2026-10-31 le implemento io** (codice compreso); a te restan
 | [M2.1](M2.1-scaffold-yunzii-b68.md) | Scaffold `yunzii-b68` con matrice 5×16 dallo stock (include ex M2.2) | M2 | **Chiuso** (Claude) | M |
 | [M2.3](M2.3-gpio-e-matrice.md) | `user_init` (GPIO come lo stock) e `user_matrix` (include ex M2.4) | M2 | **Chiuso** (Claude) | L |
 
+| M2.9 | Chord di recupero nell'applicazione (celle provvisorie sulla B68) | M2 | **Chiuso** (Claude) | M |
+
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
 ## Modello di scheda
