@@ -6,6 +6,29 @@ realtà coincide con quello che abbiamo ricavato dal firmware stock.
 
 Regola generale: **batteria e cavo USB della tastiera scollegati** quando colleghi o scolleghi il programmatore.
 
+## Fase 0 — Senza il Nano (solo ISP, rischio accettato)
+
+Se il Nano non c'è ancora, si può già provare tutto via ISP (`sinowisp`, lo stesso strumento con cui hai fatto il dump).
+**Il rischio**: se il nostro firmware non parte, la tastiera resta inutilizzabile fino al ripristino via ICP con il Nano (il
+dump è al sicuro e riscrivibile). Per ridurlo, prima si prova la scrittura con un'immagine che è identica allo stock.
+
+| # | Cosa fai | Risultato atteso |
+| --- | --- | --- |
+| 0.1 | Copia in una cartella di Windows `backups/dump/app_r1.bin` (l'applicazione stock, 61440 B, **senza** bootloader) | |
+| 0.2 | `.\sinowisp.exe write --platform sh68f90 --vendor_id 0x258a --product_id 0x010c --format bin app_r1.bin` | scrittura riuscita; la tastiera funziona come prima |
+| 0.3 | Rileggi: `.\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c -s firmware --format bin check.bin` e confrontala con `app_r1.bin` | uguali, tranne i 2 byte di stato a `0xC60A` e `0xC65A` |
+
+Se 0.2 o 0.3 non vanno, **fermati**: significa che la scrittura via ISP non funziona con i parametri di default e va capito
+prima di scrivere qualsiasi cosa nostra. Se vanno, la strada di scrittura è provata senza aver cambiato nulla.
+
+Poi il firmware sonda (Fase B), scritto allo stesso modo:
+`.\sinowisp.exe write --platform sh68f90 --vendor_id 0x258a --product_id 0x010c --format ihex -f yunzii-b68_probe_smk.hex`
+(`-f` perché l'immagine è più corta dell'area firmware).
+
+Se dopo la sonda la tastiera non compare: tieni premuti i tre tasti del chord **mentre colleghi l'USB** (la prima riga, i primi tre
+tasti da sinistra: è l'ipotesi più probabile per le celle colonna 0, 1, 2 riga 0). Se entra in ISP (`sinowisp` la trova)
+rimetti `app_r1.bin` come in 0.2. Altrimenti si aspetta il Nano.
+
 ## Fase A — Rete di sicurezza (solo lettura)
 
 | # | Cosa fai | Risultato atteso | Se no |
@@ -33,9 +56,7 @@ su quale (colonna, riga), e conferma che la matrice 5×16 dello stock è giusta.
 | B4 | Premi i tasti **in un ordine noto** (riga per riga, da sinistra) | per ogni tasto compare `cNNrR ` |
 | B5 | Incollami il testo | io ricavo la mappa |
 
-Se non compare nulla: tieni premute le celle del chord di recupero **mentre colleghi l'USB** (celle provvisorie: colonna 0, 1 e 2
-della riga 0, cioè i primi tre tasti che il probe scrive come `c00r0`, `c01r0`, `c02r0`; non sai quali siano, quindi prova i tre
-tasti del primo angolo in alto a sinistra) per rientrare in ISP; altrimenti ripristina il dump con il Nano.
+Se non compare nulla: vedi la Fase 0 (chord di recupero, poi ripristino con `app_r1.bin` o con il Nano).
 
 Cosa mi dice la sonda in più: se `P7.0` o altri ingressi non producono nulla, la matrice è giusta; se alcune celle non rispondono, i
 pin delle colonne o delle righe differiscono dall'ipotesi.
