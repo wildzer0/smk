@@ -76,6 +76,33 @@ SMK. Nel bootloader stock lo stub a `0xFF00` confronta `A==0x5A` e `B==0xA5`. Qu
 funziona sulla B68 senza modifiche. L'app stock non ha un reset vector che passa per il bootloader (`LJMP 0x9A26` diretto):
 dopo `sinowisp write` il reset vector è quello dell'immagine scritta.
 
+
+## Radio BK3632 (analisi statica, 2026-10-31)
+
+Il collegamento con la radio **non è lo SPI a bit-bang della Air60**: il firmware stock usa l'**EUART in modo 0** (registro di scorrimento
+sincrono) con due linee di contorno. Evidenze nel dump:
+
+* **ISR UART** (vettore `0x6B` → `0xA43C`): su `RI` copia `SBUF` in un buffer di ricezione (`0x54 + n`, fino a 23 byte) e alza un flag; su `TI` manda
+  il byte successivo del frame in `0x33 + n` finché ne restano. Ad ogni invocazione azzera i bit `SM0/SM1/SM2` (`ANL SCON,#0x1F`): il modo resta **0**.
+* **Linea di richiesta/selezione `P0.2`**: prima di trasmettere `P0.2` va in uscita e **scende** (`ORL P0CR,#4; CLR P0.2`); a fine frame torna ingresso
+  e viene rilasciata. È l'equivalente del CS della Air60. A riposo vale 1.
+* **Linea di attenzione `P4.7`** (ingresso): letta a ogni tick del Timer2 e in più punti; quando è alta il firmware prepara una richiesta alla radio. Equivale a MOT.
+* **Frame**: costruito a `0x33..`, `checksum = 0x55 − Σ(byte precedenti)` (lo stesso della Air60), ma **senza l'intestazione `0xAA`** vista nel file di NuPhy:
+  `[0x33]=0x01, [0x34]=comando, argomenti…`. Esempio trovato: comando `0x09` con `01 07 "B68 3.0"` e `00 08 "B68 5.0 "` (nome Bluetooth: Classic 3.0 e BLE 5.0); un altro comando `0x0C`.
+* **Pin del modo 0 sull'SH68F90**: TXD (clock di scorrimento) `P5.5`, RXD (dati) `P5.6`, oppure `P3.3`/`P3.4` con `MAPPING = 0xA5`. Lo stock lascia `P5.5/P5.6`
+  come ingressi senza pull-up e non scrive mai SBRT: coerente con il modo 0, dove il clock è fisso (Fsys/12) o dipende da un registro non ancora identificato.
+
+**Non confermato** (serve un'osservazione sul banco): i pin esatti (`P5.5/P5.6`?), la frequenza del clock, la forma dei frame (intestazione, lunghezza), i comandi e le risposte.
+Una cattura con l'analizzatore logico durante accensione, cambio modalità (2.4G/BT) e pressione di tasti chiarisce tutto in una volta.
+
+## LED (analisi statica)
+
+* Il firmware pilota **tre banchi PWM da 6 canali**: `PWM0x`, `PWM1x`, `PWM2x`, cioè 18 canali, uno per pin di `P1`, `P2`, `P3` (le tre porte che a riposo sono tutte uscite a 0).
+  Sono le **colonne** della matrice dei LED (18 colonne).
+* Le **righe** (pozzi di corrente) non sono ancora identificate. Candidati: uscite che lo stock imposta ma non usa per la matrice dei tasti: `P4.1`, `P7.4`, `P7.5`, `P7.6`, `P0.2`
+  (quest'ultima è la linea della radio). Il tick del Timer2 alterna una scansione dei tasti (`~320 µs`) e un sotto-frame dei LED.
+* Non si sa ancora se la retroilluminazione è monocromatica o RGB, né se esistono LED di stato separati: dipende dalla tastiera, non dal codice.
+
 ## Cosa manca per chiudere M1.6
 
 1. ~~Funzione di scansione matrice~~ → fatto, vedi sopra (resta il ritardo di settling e la mappa tasto→(col,riga)).
