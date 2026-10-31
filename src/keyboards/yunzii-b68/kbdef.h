@@ -7,10 +7,9 @@
 
 // Yunzii B68 (BYK916 = SH68F90A + BK3632).
 //
-// NOTE: every pin below was read from the stock firmware (see
-// docs/keyboards/yunzii-b68-firmware-stock.md, "Matrice") and has NOT yet been
-// confirmed on the board. The column order and the (row, col) -> key mapping are
-// provisional until the probe firmware has run on the hardware.
+// The pins below were read from the stock firmware (docs/keyboards/yunzii-b68-firmware-stock.md,
+// "Matrice") and confirmed on the board with the probe layout: every key answered on the cell expected
+// (docs/keyboards/yunzii-b68.md). P7.0 and the LED/radio pins are still unidentified.
 
 #define MATRIX_ROWS 5
 #define MATRIX_COLS 16
@@ -72,9 +71,7 @@
 #define KB_C14 P4_3
 #define KB_C15 P4_5
 
-// Recovery chord (see src/smk/recovery.h): hold these three cells while plugging in to
-// jump to the ISP bootloader. PROVISIONAL: they are raw (col, row) cells, not known
-// keys. Replace them with three real keys once the probe firmware has mapped the matrix;
-// the three cells must all be held for ~60 ms, so pressing them by chance is unlikely.
+// Recovery chord (see src/smk/recovery.h): hold Esc + 1 + 2 (cells c0r0, c1r0, c2r0, mapped with the probe
+// layout) while plugging in to jump to the ISP bootloader. All three must stay down for ~60 ms.
 #define RECOVERY_CHORD_COUNT 3
 #define RECOVERY_CHORD_KEYS  { { 0u, 0u }, { 1u, 0u }, { 2u, 0u } }

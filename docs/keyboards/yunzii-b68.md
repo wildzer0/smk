@@ -84,6 +84,25 @@ non con il PC.
 **Preset sinowisp:** non verificati. Il test è stato lanciato in modo errato (`yunizii-al66` con refuso e senza il
 sottocomando `read`). Non serve: con `--platform sh68f90 --vendor_id 0x258a --product_id 0x010c` sinowisp funziona già.
 
+## Matrice (probe, 2026-10-31)
+
+Misurata sulla scheda con il layout `probe` (ogni tasto digita `cNNrR`), tasti premuti riga per riga da sinistra. **Conferma
+l'ipotesi ricavata dal firmware stock**: 16 colonne × 5 righe, tutti i tasti rispondono sulle celle previste. Risultato
+(colonna, riga) per ogni tasto fisico, da sinistra a destra:
+
+| Riga | Colonne dei tasti presenti | Tasti |
+| --- | --- | --- |
+| 0 | 0–13, 15 | Esc 1 2 3 4 5 6 7 8 9 0 - = Backspace · c15 |
+| 1 | 0–13, 15 | Tab Q W E R T Y U I O P [ ] \ · c15 |
+| 2 | 0–11, 13, 15 | Caps A S D F G H J K L ; ' · Enter · c15 |
+| 3 | 0–10, 13, 14, 15 | Shift Z X C V B N M , . / · Shift · Su · c15 |
+| 4 | 0, 1, 2, 5, 8, 9, 13, 14, 15 | Ctrl Win Alt · Spazio · Alt Fn · Sx Giù Dx |
+
+Sono **67 celle** riportate, la tastiera ha 68 tasti: ne manca una nella riga 4, tra Fn e le frecce (cella ipotizzata `c10r4`,
+assunta Ctrl destro nel layout). Il layout `default` e `vial.json` usano le larghezze di una 65% ANSI; la colonna destra
+(`c15`) è assunta come Del, PgUp, PgDn, End (da confermare sulla tastiera). Il chord di recupero è Esc + 1 + 2
+(celle `c0r0`, `c1r0`, `c2r0`); lo sblocco Vial è Esc + Invio.
+
 ## Hardware (M0.4)
 
 *Da compilare: foto PCB, pad ICP, pinout.*

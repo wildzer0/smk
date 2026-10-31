@@ -26,8 +26,8 @@ keyboards += {
             'keymap_sectors' : '3',  # 8 layers x 5 x 16 x 2 B + header = 1292 B per copy, two copies
             'vial_json' : 'vial.json',
             'vial_uid' : '0x46ecd0565df84fa8',
-            # (row, col) cells to hold to unlock. PROVISIONAL, like the recovery chord: see kbdef.h
-            'vial_unlock' : '0,0;0,1',
+            # (row, col) cells to hold to unlock: Esc and Enter
+            'vial_unlock' : '0,0;2,13',
         },
     },
 }

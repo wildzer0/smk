@@ -75,3 +75,11 @@ pin delle colonne o delle righe differiscono dall'ipotesi.
   "reset" da Vial (o il reset della keymap) riporta ai default compilati.
 * I passi di questa sequenza non sono ancora stati eseguiti; le righe marcate come "da verificare" in
   [recovery-icp.md](recovery-icp.md) restano tali finché non le proviamo.
+
+## Stato (2026-10-31)
+
+* Fase 0 eseguita: scrittura dell'immagine stock via ISP e rilettura identica; firmware sonda scritto via ISP, matrice mappata
+  (vedi [keyboards/yunzii-b68.md](keyboards/yunzii-b68.md)). Il Nano non è ancora arrivato.
+* **Prossimo** (senza Nano): riflash via ISP **dal firmware SMK** (VID:PID `258a:dead`) con il layout `default`:
+  `.\sinowisp.exe write --platform sh68f90 --vendor_id 0x258a --product_id 0xdead --format ihex -f yunzii-b68_default_smk.hex`.
+  Prova anche che l'ingresso in ISP dall'applicazione SMK funziona sul chip reale.

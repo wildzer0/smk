@@ -159,6 +159,48 @@ class TestB68ProbeLayout(unittest.TestCase):
         self.assertEqual(self.typed(12, 4), [KEY_C, KEY_DIGIT[1], KEY_DIGIT[2], KEY_R, KEY_DIGIT[4], KEY_SPACE])
 
 
+class TestB68DefaultLayout(unittest.TestCase):
+    """The shipped layout: cells found with the probe, keycodes of a 65% ANSI board."""
+
+    def keys(self, *cells, held=()):
+        """The last keyboard report after pressing `cells`, with `held` already down for a few scans
+        (a key pressed in the same scan as Fn would be read before Fn, in column order)."""
+        kb = Air60Sim(firmware=FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            if held:
+                for col, row in held:
+                    kb.matrix.press(col, row)
+                read_rows = kb._a("user_matrix_read_rows")
+                kb.brk(read_rows)
+                for _ in range(200):
+                    kb.run()
+                    kb.matrix.inject(kb)
+                kb.cmd("delete")
+            for col, row in cells:
+                kb.matrix.press(col, row)
+            reports = kb.scan_for_report(max_hits=600)
+        finally:
+            kb.close()
+        return reports[-1]
+
+    def test_letter(self):
+        self.assertEqual(self.keys((1, 1))[2], 0x14)  # c1r1 = Q
+
+    def test_right_column(self):
+        self.assertEqual(self.keys((15, 0))[2], 0x4C)  # c15r0 = Delete
+
+    def test_shifted_key(self):
+        report = self.keys((0, 3), (1, 3))  # left Shift + Z
+        self.assertEqual(report[0], 0x02)
+        self.assertEqual(report[2], 0x1D)
+
+    def test_fn_layer_gives_f1(self):
+        self.assertEqual(self.keys((1, 0), held=[(9, 4)])[2], 0x3A)  # Fn + c1r0 = F1
+
+
 RECOVERY_CHORD = [(0, 0), (1, 0), (2, 0)]  # RECOVERY_CHORD_KEYS in kbdef.h
 ISP_ENTRY = 0xFF00
 MAX_STOPS = 400
