@@ -1,0 +1,69 @@
+#pragma once
+
+#include "sh68f90.h"
+#include "keycodes.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+// Yunzii B68 (BYK916 = SH68F90A + BK3632).
+//
+// NOTE: every pin below was read from the stock firmware (see
+// docs/keyboards/yunzii-b68-firmware-stock.md, "Matrice") and has NOT yet been
+// confirmed on the board. The column order and the (row, col) -> key mapping are
+// provisional until the probe firmware has run on the hardware.
+
+#define MATRIX_ROWS 5
+#define MATRIX_COLS 16
+
+// Row Pin Bits
+#define KB_R0_P7_1 _P7_1
+#define KB_R1_P7_2 _P7_2
+#define KB_R2_P7_3 _P7_3
+#define KB_R3_P5_3 _P5_3
+#define KB_R4_P5_4 _P5_4
+
+// Row Pins (inputs with pull-up, pressed = 0)
+#define KB_R0 P7_1
+#define KB_R1 P7_2
+#define KB_R2 P7_3
+#define KB_R3 P5_3
+#define KB_R4 P5_4
+
+// P7.0: an input the stock firmware reads together with the rows, function unknown.
+// It is NOT part of the matrix.
+
+// Column Pin Bits
+#define KB_C0_P6_0  _P6_0
+#define KB_C1_P6_1  _P6_1
+#define KB_C2_P6_2  _P6_2
+#define KB_C3_P6_3  _P6_3
+#define KB_C4_P6_4  _P6_4
+#define KB_C5_P6_5  _P6_5
+#define KB_C6_P6_6  _P6_6
+#define KB_C7_P6_7  _P6_7
+#define KB_C8_P5_0  _P5_0
+#define KB_C9_P5_1  _P5_1
+#define KB_C10_P5_2 _P5_2
+#define KB_C11_P5_7 _P5_7
+#define KB_C12_P4_0 _P4_0
+#define KB_C13_P4_2 _P4_2
+#define KB_C14_P4_3 _P4_3
+#define KB_C15_P4_5 _P4_5
+
+// Column Pins (strobes, active low)
+#define KB_C0  P6_0
+#define KB_C1  P6_1
+#define KB_C2  P6_2
+#define KB_C3  P6_3
+#define KB_C4  P6_4
+#define KB_C5  P6_5
+#define KB_C6  P6_6
+#define KB_C7  P6_7
+#define KB_C8  P5_0
+#define KB_C9  P5_1
+#define KB_C10 P5_2
+#define KB_C11 P5_7
+#define KB_C12 P4_0
+#define KB_C13 P4_2
+#define KB_C14 P4_3
+#define KB_C15 P4_5
