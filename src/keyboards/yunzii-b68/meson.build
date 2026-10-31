@@ -16,6 +16,13 @@ keyboards += {
                 'dir' : kb_dir / 'layouts/default',
                 'src' : files('layouts/default/layout.c'),
             },
+            # the default layout with the raw HID interface on EP2 (spike S1). Media keys and the ISP
+            # report are not available in this build: enter the bootloader with the recovery chord
+            'rawhid' : {
+                'dir' : kb_dir / 'layouts/default',
+                'src' : files('layouts/default/layout.c'),
+                'args' : ['-DRAW_HID_ENABLE=1'],
+            },
             # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
             'probe' : {
                 'dir' : kb_dir / 'layouts/probe',

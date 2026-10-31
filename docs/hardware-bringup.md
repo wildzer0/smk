@@ -90,3 +90,28 @@ pin delle colonne o delle righe differiscono dall'ipotesi.
 * **Trovato:** la tastiera ha 66 tasti + encoder rotativo (pressione = `c15r0`). Il layout è stato corretto di conseguenza.
 * **Prossimo (hardware):** flashare il layout `probe` aggiornato e girare l'encoder lentamente: ora scrive anche `p70=0` ecc. quando un ingresso
   non di matrice cambia, e `iNN` per i contatti a massa fissa.
+
+## Spike S1: raw HID su EP2 (build `yunzii-b68_rawhid_smk.hex`)
+
+Domanda: l'endpoint EP2 OUT del SH68F90A riceve davvero pacchetti da 32 byte e il firmware risponde su EP2 IN? Se sì, Vial
+si fa col piano principale (D8); se no, piano B (feature report su EP0).
+
+**Cosa contiene la build.** Il layout `default` con l'interfaccia 1 sostituita da un'interfaccia raw HID (usage page `0xFF60`,
+usage `0x61`, report da 32 byte senza ID), che passa ogni pacchetto a `via_receive()` (VIA e Vial). **Limiti noti, voluti per il
+test:** niente tasti multimediali né encoder (nessun posto dove mandarli, finché non li spostiamo sull'interfaccia 0), niente
+NKRO, niente report ISP: per tornare al firmware normale si entra in ISP col **chord Esc + 1 + 2 mentre colleghi l'USB**.
+
+| # | Cosa fai | Risultato atteso |
+| --- | --- | --- |
+| S1.1 | Flasha `build-b68/yunzii-b68_rawhid_smk.hex` come al solito (`sinowisp write ... -f`) | la tastiera riparte e si digita |
+| S1.2 | Apri `tools/rawhid-test.html` con Chrome/Edge, premi **Connect** e scegli la tastiera | compare "connected" (se la tastiera non è in elenco: la build non ha l'interfaccia raw HID) |
+| S1.3 | **VIA protocol version** | risposta `01 00 09 ...` |
+| S1.4 | **Vial id** | `06 00 00 00` e l'id `46 ec d0 56 5d f8 4f a8` |
+| S1.5 | **Read the whole Vial definition** | "xz header ok" |
+| S1.6 | **Stress: 1000 round trips** | 0 bad |
+| S1.7 | Se tutto è verde, prova **Vial** (https://get.vial.today): deve riconoscere la tastiera e mostrare il layout | |
+
+Per tornare indietro: chord Esc + 1 + 2 mentre colleghi l'USB, poi `sinowisp write ... -f yunzii-b68_default_smk.hex`.
+
+Se S1.2 non trova la tastiera o S1.3 non risponde, dimmelo con cosa vedi in `Gestione dispositivi` (o `lsusb -v`): è il dato che
+decide il piano B.

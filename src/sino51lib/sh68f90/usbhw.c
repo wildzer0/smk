@@ -51,7 +51,11 @@ void usb_hw_init(void)
 {
     USBADDR = 0;
     USBIE1  = (_SETUPIE | _SOFIA | _RESMIE | _SUSPIE | _PBRSTIE);
+#ifdef RAW_HID_ENABLE
+    USBIE2 = (_OEP0IE | _IEP0IE | _OEP2IE);
+#else
     USBIE2  = (_OEP0IE | _IEP0IE);
+#endif
     USBCON  = (_ENUSB | _SW1CON);
     IEN1 |= _EUSB;
 }
@@ -79,12 +83,32 @@ void usb_hw_ep2_in_send(uint8_t *src, uint8_t len)
     SET_EP2_IN_RDY;
 }
 
+#ifdef RAW_HID_ENABLE
+uint8_t usb_hw_ep2_out_read(__xdata uint8_t *dst, uint8_t max)
+{
+    uint8_t length = OEP2CNT & 0x7F;
+
+    if (length > max) {
+        length = max;
+    }
+    for (uint8_t i = 0; i < length; i++) {
+        dst[i] = EP2_OUT_BUF[i];
+    }
+    return length;
+}
+
+void usb_hw_ep2_out_arm(void)
+{
+    SET_EP2_OUT_RDY;
+}
+#endif
+
 // IEPxRDY reads back the endpoint's busy state here, so completion needs no bookkeeping.
 void usb_hw_ep1_in_complete(void) {}
 
 void usb_hw_ep2_in_complete(void) {}
 
-#if DEBUG == 1
+#if DEBUG == 1 && !defined(RAW_HID_ENABLE)
 bool usb_hw_ep2_in_free(void)
 {
     return !(EP2CON & _IEP2RDY);

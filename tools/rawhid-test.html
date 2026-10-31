@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SMK raw HID test</title>
+<style>
+  body { font: 14px/1.4 system-ui, sans-serif; max-width: 52rem; margin: 1.5rem auto; padding: 0 1rem; }
+  button { margin: 0 .4rem .4rem 0; padding: .4rem .8rem; }
+  pre { background: #111; color: #ddd; padding: .8rem; height: 22rem; overflow: auto; }
+  .bad { color: #f66; } .ok { color: #6c6; }
+</style>
+</head>
+<body>
+<h1>SMK raw HID test</h1>
+<p>Talks to the keyboard's raw HID interface (usage page <code>0xFF60</code>, usage <code>0x61</code>, 32-byte reports) with WebHID.
+Needs Chrome or Edge. Nothing is installed or sent anywhere: open the file, press Connect, pick the keyboard.</p>
+<button id="connect">Connect</button>
+<button class="cmd" data-hex="01">VIA protocol version</button>
+<button class="cmd" data-hex="FE 00">Vial id</button>
+<button class="cmd" data-hex="FE 01">Vial definition size</button>
+<button class="cmd" data-hex="11">Layer count</button>
+<button class="cmd" data-hex="04 00 00 00">Keycode layer 0 row 0 col 0</button>
+<button class="cmd" data-hex="FE 05">Unlock status</button>
+<br>
+<button id="stress">Stress: 1000 round trips</button>
+<button id="def">Read the whole Vial definition</button>
+<pre id="log"></pre>
+<script>
+const log = document.getElementById('log');
+let dev = null;
+let waiting = null;
+
+function out(text, cls) {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = text;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+const hex = bytes => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join(' ');
+
+function parse(text) {
+  const bytes = new Uint8Array(32);
+  text.trim().split(/\s+/).forEach((h, i) => { bytes[i] = parseInt(h, 16); });
+  return bytes;
+}
+
+// One request, one reply: the keyboard answers every packet with exactly one packet.
+function exchange(bytes, timeoutMs = 1000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { waiting = null; reject(new Error('no reply in ' + timeoutMs + ' ms')); }, timeoutMs);
+    waiting = data => { clearTimeout(timer); waiting = null; resolve(data); };
+    dev.sendReport(0, bytes).catch(e => { clearTimeout(timer); waiting = null; reject(e); });
+  });
+}
+
+document.getElementById('connect').onclick = async () => {
+  const [d] = await navigator.hid.requestDevice({ filters: [{ usagePage: 0xFF60, usage: 0x61 }] });
+  if (!d) return;
+  dev = d;
+  if (!dev.opened) await dev.open();
+  dev.oninputreport = e => { if (waiting) waiting(new Uint8Array(e.data.buffer)); };
+  out('connected: ' + dev.productName + ' (' + dev.vendorId.toString(16) + ':' + dev.productId.toString(16) + ')', 'ok');
+};
+
+document.querySelectorAll('.cmd').forEach(b => b.onclick = async () => {
+  if (!dev) return out('connect first', 'bad');
+  const req = parse(b.dataset.hex);
+  try {
+    const reply = await exchange(req);
+    out('> ' + hex(req.slice(0, 8)) + ' ...\n< ' + hex(reply), 'ok');
+  } catch (e) { out(e.message, 'bad'); }
+});
+
+document.getElementById('stress').onclick = async () => {
+  if (!dev) return out('connect first', 'bad');
+  let bad = 0;
+  const start = performance.now();
+  for (let i = 0; i < 1000; i++) {
+    const req = new Uint8Array(32);
+    req[0] = 0x04; req[1] = 0; req[2] = i % 5; req[3] = i % 16; // read a keycode: the reply echoes the request
+    try {
+      const r = await exchange(req);
+      if (r[0] !== 0x04 || r[2] !== req[2] || r[3] !== req[3]) bad++;
+    } catch (e) { bad++; out('round trip ' + i + ': ' + e.message, 'bad'); if (bad > 5) break; }
+  }
+  const ms = performance.now() - start;
+  out('1000 round trips in ' + ms.toFixed(0) + ' ms (' + (ms / 1000).toFixed(2) + ' ms each), ' + bad + ' bad', bad ? 'bad' : 'ok');
+};
+
+document.getElementById('def').onclick = async () => {
+  if (!dev) return out('connect first', 'bad');
+  const size = new DataView((await exchange(parse('FE 01'))).buffer).getUint32(0, true);
+  const data = new Uint8Array(Math.ceil(size / 32) * 32);
+  for (let page = 0; page * 32 < size; page++) {
+    const r = await exchange(parse('FE 02 ' + (page & 255).toString(16) + ' ' + (page >> 8).toString(16)));
+    data.set(r, page * 32);
+  }
+  out('definition: ' + size + ' bytes, starts ' + hex(data.slice(0, 6)) + (data[0] === 0xFD && data[1] === 0x37 ? ' (xz header ok)' : ' (NOT an xz header)'), data[0] === 0xFD ? 'ok' : 'bad');
+};
+</script>
+</body>
+</html>

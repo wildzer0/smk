@@ -236,6 +236,84 @@ class TestB68DefaultLayout(unittest.TestCase):
         self.assertEqual(self.keys((1, 0), held=[(9, 4)])[2], 0x3A)  # Fn + c1r0 = F1
 
 
+def find_rawhid_firmware():
+    for d in ("build-b68", "build"):
+        f = REPO_ROOT / d / "yunzii-b68_rawhid_smk.hex"
+        if f.exists():
+            return str(f)
+    return None
+
+
+RAWHID_FIRMWARE = find_rawhid_firmware()
+
+
+class TestB68RawHid(unittest.TestCase):
+    """VIA/Vial over the raw HID interface: a 32-byte packet in on EP2 OUT, the reply on EP2 IN."""
+
+    EP2_OUT_BUF, OEP2CNT, USBIF2, OEP2IF = 0x1140, 0xA4, 0x93, 0x40
+
+    def exchange(self, *requests):
+        """Sends each request in turn (waiting for its reply first) and returns the replies."""
+        if not RAWHID_FIRMWARE:
+            self.skipTest("yunzii-b68_rawhid_smk.hex not built")
+        kb = Air60Sim(firmware=RAWHID_FIRMWARE)
+        kb.matrix = B68KeyMatrix()
+        replies = []
+        try:
+            kb.boot(usb=True)
+            kb.mark_usb_configured()
+            read_rows = kb._a("user_matrix_read_rows")
+            kb.brk(read_rows)
+            for request in requests:
+                packet = list(request) + [0] * (32 - len(request))
+                before = len(self.ep2_packets(kb))
+                kb.cmd("set mem xram 0x%x " % self.EP2_OUT_BUF + " ".join("0x%02x" % b for b in packet))
+                kb.set_sfr(self.OEP2CNT, 32)
+                # The simulator raises the USB interrupt only for a SETUP, so a harmless GET_DESCRIPTOR(device)
+                # carries it, and the same interrupt finds the EP2 OUT flag (what the SIE would set for a packet).
+                setup = [0x80, 0x06, 0x00, 0x01, 0x00, 0x00, 0x40, 0x00]
+                kb.cmd("set mem xram 0x1100 " + " ".join("0x%02x" % b for b in setup))
+                kb.set_sfr(self.USBIF2, self.OEP2IF)
+                kb.set_sfr(0x92, 0x10)  # USBIF1.SETUPIF
+                for _ in range(300):
+                    kb.run()
+                    kb.matrix.inject(kb)
+                    if len(self.ep2_packets(kb)) > before:
+                        break
+                packets = self.ep2_packets(kb)
+                self.assertGreater(len(packets), before, "no reply on EP2 IN")
+                replies.append(packets[-1])
+            kb.cmd("delete")
+            self.last_sizes = [int(n) for n in re.findall(r"\[SIE\] EP2 IN (\d+) bytes", kb.stderr_text())]
+        finally:
+            kb.close()
+        return replies
+
+    @staticmethod
+    def ep2_packets(kb):
+        return [[int(x, 16) for x in m.split()]
+                for m in re.findall(r"\[SIE\] EP2 IN \d+ bytes:((?: [0-9a-f]{2})*)", kb.stderr_text())]
+
+    def test_via_protocol_version(self):
+        (reply,) = self.exchange([0x01])
+        self.assertEqual(reply[:3], [0x01, 0x00, 0x09])  # the simulator's log shows the first 24 bytes of a packet
+        self.assertEqual(self.last_sizes, [32])  # ...but the packet is the full 32
+
+    def test_vial_keyboard_id(self):
+        (reply,) = self.exchange([0xFE, 0x00])
+        self.assertEqual(reply[:4], [6, 0, 0, 0])  # Vial protocol 6
+        self.assertEqual(reply[4:12], [0x46, 0xEC, 0xD0, 0x56, 0x5D, 0xF8, 0x4F, 0xA8])
+
+    def test_keycode_round_trip(self):
+        replies = self.exchange([0x05, 0, 0, 0, 0x12, 0x34], [0x04, 0, 0, 0])
+        self.assertEqual(replies[1][:6], [0x04, 0, 0, 0, 0x12, 0x34])
+
+    def test_two_requests_in_a_row_both_answered(self):
+        replies = self.exchange([0x01], [0x11])
+        self.assertEqual(replies[0][:3], [0x01, 0x00, 0x09])
+        self.assertEqual(replies[1][:2], [0x11, 8])  # eight layers
+
+
 class TestB68Encoder(unittest.TestCase):
     """The encoder on P0.6 (A) and P0.7 (B): a full cycle of the two pins is one volume step."""
 

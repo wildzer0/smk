@@ -24,4 +24,5 @@ src_smk += files(
 src_via = files(
     'via.c',
     'vial.c',
+    'raw_hid.c',
 )

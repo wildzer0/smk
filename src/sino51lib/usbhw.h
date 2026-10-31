@@ -13,6 +13,13 @@ void usb_hw_ep2_in_send(uint8_t *src, uint8_t len);
 void usb_hw_ep1_in_complete(void);
 void usb_hw_ep2_in_complete(void);
 
+#ifdef RAW_HID_ENABLE
+// EP2 OUT, the host-to-keyboard half of the raw HID interface (RAW_HID_ENABLE builds only).
+// The packet is read after the OUT interrupt; the endpoint accepts the next one once armed again.
+uint8_t usb_hw_ep2_out_read(__xdata uint8_t *dst, uint8_t max);
+void    usb_hw_ep2_out_arm(void);
+#endif
+
 #if DEBUG == 1
 bool usb_hw_ep2_in_free(void);
 void usb_hw_console_send(const __xdata uint8_t *data, uint8_t len);

@@ -342,7 +342,7 @@ foreach keyboard, board : keyboards
             '-DUSB_PID=@0@'.format(options['product_id']),
             '-DKEYBOARD_NAME="@0@"'.format(keyboard),
             '-DLAYOUT_NAME="@0@"'.format(layout),
-        ]
+        ] + variant.get('args', [])
 
         foreach key, define : usb_string_defines
             value = get_option('usb_' + key)

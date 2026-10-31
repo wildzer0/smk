@@ -37,6 +37,10 @@
 
 #define BCDHID 0x0111 // HID Class Spec Version
 
+#ifdef RAW_HID_ENABLE
+#    include "raw_hid.h"
+#endif
+
 #define ISP_CMD_ENTER 0x75
 
 enum usb_string_index {
@@ -108,6 +112,30 @@ const uint8_t hid_report_desc_keyboard[] = {
     // clang-format on
 };
 
+#ifdef RAW_HID_ENABLE
+// Raw HID, as VIA and Vial expect it: usage page 0xFF60, usage 0x61, one 32-byte input report and one
+// 32-byte output report, no report IDs.
+const uint8_t hid_report_desc_extra[] = {
+    // clang-format off
+    HID_RI_USAGE_PAGE(16, 0xFF60),
+    HID_RI_USAGE(8, 0x61),
+    HID_RI_COLLECTION(8, 0x01),           // Application
+        HID_RI_USAGE(8, 0x62),
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(16, 0x00FF),
+        HID_RI_REPORT_SIZE(8, 0x08),
+        HID_RI_REPORT_COUNT(8, RAW_HID_SIZE),
+        HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+        HID_RI_USAGE(8, 0x63),
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(16, 0x00FF),
+        HID_RI_REPORT_SIZE(8, 0x08),
+        HID_RI_REPORT_COUNT(8, RAW_HID_SIZE),
+        HID_RI_OUTPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE | HID_IOF_NON_VOLATILE),
+    HID_RI_END_COLLECTION(0),
+    // clang-format on
+};
+#else
 const uint8_t hid_report_desc_extra[] = {
     // clang-format off
     HID_RI_USAGE_PAGE(8, 0x01),           // Generic Desktop
@@ -196,6 +224,7 @@ const uint8_t hid_report_desc_extra[] = {
 
     // clang-format on
 };
+#endif // RAW_HID_ENABLE
 
 usb_desc_device_c usb_desc_device = {
     .bLength            = sizeof(struct usb_desc_device),
@@ -250,7 +279,11 @@ usb_desc_interface_c usb_desc_interface_extra = {
     .bDescriptorType    = USB_DESC_INTERFACE,
     .bInterfaceNumber   = 1,
     .bAlternateSetting  = 0,
+#ifdef RAW_HID_ENABLE
+    .bNumEndpoints      = 2, // IN and OUT
+#else
     .bNumEndpoints      = 1,
+#endif
     .bInterfaceClass    = USB_IFACE_CLASS_HID,
     .bInterfaceSubClass = USB_IFACE_SUBCLASS_NONE,
     .bInterfaceProtocol = USB_IFACE_PROTOCOL_BOOT,
@@ -272,9 +305,24 @@ usb_desc_endpoint_c usb_desc_endpoint_extra = {
     .bDescriptorType  = USB_DESC_ENDPOINT,
     .bEndpointAddress = 2 | USB_DIR_IN,
     .bmAttributes     = USB_XFER_INTERRUPT,
+#ifdef RAW_HID_ENABLE
+    .wMaxPacketSize   = RAW_HID_SIZE,
+#else
     .wMaxPacketSize   = 64, // 64 bytes
+#endif
     .bInterval        = 1,  // 1ms
 };
+
+#ifdef RAW_HID_ENABLE
+usb_desc_endpoint_c usb_desc_endpoint_extra_out = {
+    .bLength          = sizeof(struct usb_desc_endpoint),
+    .bDescriptorType  = USB_DESC_ENDPOINT,
+    .bEndpointAddress = 2 | USB_DIR_OUT,
+    .bmAttributes     = USB_XFER_INTERRUPT,
+    .wMaxPacketSize   = RAW_HID_SIZE,
+    .bInterval        = 1, // 1ms
+};
+#endif
 
 usb_configuration_c usb_config = {
     {
@@ -293,6 +341,9 @@ usb_configuration_c usb_config = {
         {.interface = &usb_desc_interface_extra},
         {.hid = &usb_desc_hid_extra},
         {.endpoint = &usb_desc_endpoint_extra},
+#ifdef RAW_HID_ENABLE
+        {.endpoint = &usb_desc_endpoint_extra_out},
+#endif
         {0},
     },
 };
@@ -425,18 +476,26 @@ void usb_send_report(__xdata report_keyboard_t *report)
 
 void usb_send_nkro(__xdata report_nkro_t *report)
 {
+#ifdef RAW_HID_ENABLE
+    (void)report; // EP2 carries the raw HID interface; keys go out as 6KRO on EP1
+#else
     if (!usb_is_configured()) {
         return;
     }
     usb_hw_ep2_in_send(report->raw, NKRO_REPORT_SIZE);
+#endif
 }
 
 void usb_send_extra(__xdata report_extra_t *report)
 {
+#ifdef RAW_HID_ENABLE
+    (void)report; // no home for media keys yet: they move to interface 0 in the next step
+#else
     if (!usb_is_configured()) {
         return;
     }
     usb_hw_ep2_in_send(report->raw, EXTRA_REPORT_SIZE);
+#endif
 }
 
 void usb_wait_for_enumeration(void)
@@ -465,6 +524,9 @@ void usb_wait_for_enumeration(void)
 // not from the ISR: the bootloader never RETIs and reboots by jumping, so an in-service latch outlives it and kills USB.
 void usb_task(void)
 {
+#ifdef RAW_HID_ENABLE
+    raw_hid_task();
+#endif
 #ifdef ISP_ENABLE
     if (usb_isp_requested) {
         isp_jump();
@@ -475,12 +537,21 @@ void usb_task(void)
 #if DEBUG == 1
 bool usb_console_ready(void)
 {
+#ifdef RAW_HID_ENABLE
+    return false; // EP2 carries the raw HID interface
+#else
     return usb_is_configured() && usb_hw_ep2_in_free();
+#endif
 }
 
 void usb_console_send(const __xdata uint8_t *data, uint8_t len)
 {
+#ifdef RAW_HID_ENABLE
+    (void)data;
+    (void)len;
+#else
     usb_hw_console_send(data, len);
+#endif
 }
 #endif
 
@@ -559,6 +630,13 @@ void usb_irq_dispatch(void)
         USBIF2 &= ~_IEP2IF;
         usb_hw_ep2_in_complete();
     }
+
+#ifdef RAW_HID_ENABLE
+    if (if2 & _OEP2IF) {
+        USBIF2 &= ~_OEP2IF;
+        raw_hid_out_irq();
+    }
+#endif
 
     if (if2 & _IEP1IF) {
         USBIF2 &= ~_IEP1IF;
@@ -1017,6 +1095,11 @@ static void usb_set_configuration_handler(struct usb_req_setup *req)
 
     EP1CON &= ~(_IEP1STL | _IEP1DTG);
     EP2CON &= ~(_IEP2STL | _IEP2DTG);
+
+#ifdef RAW_HID_ENABLE
+    EP2CON &= ~(_OEP2STL | _OEP2DTG);
+    raw_hid_reset();
+#endif
 
     ep0_ack();
 }
