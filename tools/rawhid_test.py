@@ -36,7 +36,9 @@ def main():
     dev.open_path(info["path"])
     print("connected:", info["product_string"], "%04x:%04x" % (info["vendor_id"], info["product_id"]))
 
-    for name, request in (("VIA protocol", [0x01]), ("Vial id", [0xFE, 0x00]), ("layers", [0x11])):
+    for name, request in (("VIA protocol", [0x01]), ("Vial id", [0xFE, 0x00]), ("layers", [0x11]),
+                          ("HUD info", [0xF0, 0x01, 0, 1]), ("HUD state", [0xF0, 0x02, 0, 2]),
+                          ("HUD matrix", [0xF0, 0x04, 0, 3])):
         print("%-14s" % name, exchange(dev, request).hex(" "))
 
     bad = 0

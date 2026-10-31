@@ -24,6 +24,13 @@ keyboards += {
                 # bcdDevice changes with the descriptors: 0x0200 = keyboard, media and ISP on interface 0 + raw HID
                 'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200'],
             },
+            # the rawhid build that answers the HUD as a protocol 1 keyboard with 8 columns, to find out whether an
+            # app that does not know protocol 2 connects (diagnostic only: it shows just the first 8 columns)
+            'hudv1' : {
+                'dir' : kb_dir / 'layouts/default',
+                'src' : files('layouts/default/layout.c'),
+                'args' : ['-DRAW_HID_ENABLE=1', '-DUSB_BCD_DEVICE=0x0200', '-DHUD_FORCE_PROTOCOL_1=1'],
+            },
             # types the matrix coordinates of every key pressed: finds the key -> (col, row) map
             'probe' : {
                 'dir' : kb_dir / 'layouts/probe',

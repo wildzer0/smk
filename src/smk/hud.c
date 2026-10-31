@@ -89,9 +89,16 @@ static void get_info(uint8_t *data)
         caps |= HUD_CAP_HUD_TOG;
     }
 
+#ifdef HUD_FORCE_PROTOCOL_1
+    // Diagnostic build: look like a protocol 1 keyboard (at most 8 columns) to an app that rejects protocol 2.
+    data[4] = HUD_PROTOCOL_V1;
+    data[5] = MATRIX_ROWS;
+    data[6] = (MATRIX_COLS > 8) ? 8 : MATRIX_COLS;
+#else
     data[4] = WIDE_MATRIX ? HUD_PROTOCOL_V2 : HUD_PROTOCOL_V1;
     data[5] = MATRIX_ROWS;
     data[6] = MATRIX_COLS;
+#endif
     data[7] = keymap_layer_count();
     put16(&data[8], caps);
     put16(&data[10], toggle);

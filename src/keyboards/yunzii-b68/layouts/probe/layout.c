@@ -159,6 +159,27 @@ void kb_update(void)
 
     const bool learning = timer_elapsed(started) < LEARN_MS;
 
+    // once, when the learning ends: which input pins moved by themselves ("n47 " = P4.7), i.e. what talks on its own
+    // (the radio, say). Ends with "n--".
+    static bool reported;
+    if (!learning && !reported) {
+        reported = true;
+        for (uint8_t port = 0; port < 8; port++) {
+            for (uint8_t bit = 0; bit < 8; bit++) {
+                if (noisy[port] & (uint8_t)(1u << bit)) {
+                    tap(KC_N);
+                    tap_digit(port);
+                    tap_digit(bit);
+                    tap(KC_SPACE);
+                }
+            }
+        }
+        tap(KC_N);
+        tap(KC_MINUS);
+        tap(KC_MINUS);
+        tap(KC_SPACE);
+    }
+
     for (uint8_t port = 0; port < 8; port++) {
         uint8_t watch = (uint8_t)~read_direction(port); // inputs only
         if (port == 0) {

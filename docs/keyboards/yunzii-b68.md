@@ -115,6 +115,11 @@ a ogni tick del timer; il layout `default` mappa {antiorario, orario} = {Vol−,
 
 Il testo della sonda si interrompeva dopo ~5 s perché la sonda scrive al massimo 60 eventi (`MAX_EVENTS`): non era un guasto.
 
+## Illuminazione (dichiarata dall'utente)
+
+LED **RGB** sotto i tasti, montati sul lato **sud** dell'interruttore (la parte verso l'utente); un **LED di stato** vicino al tasto Caps Lock. Probabile uso del LED di stato: Caps Lock e/o indicatori di
+batteria o di collegamento. Da confermare osservando cosa fa con il firmware stock (accensione, cambio di modalità, batteria scarica, Caps Lock).
+
 ## Hardware (M0.4)
 
 *Da compilare: foto PCB, pad ICP, pinout.*
