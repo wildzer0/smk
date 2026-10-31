@@ -4,6 +4,7 @@
 #include "indicators.h"
 #include "keyboard.h"
 #include "sleep.h"
+#include "timer.h"
 #include "kbdef.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -29,6 +30,7 @@ void tick_init(void)
 static void run_matrix_scan(void)
 {
     sweeps++;
+    timer_sweep();
     systick_arm(SYSTICK_SLOT_MATRIX_SCAN);
     matrix_scan_full();
 }

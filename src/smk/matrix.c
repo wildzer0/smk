@@ -146,6 +146,11 @@ bool matrix_any_pressed(void)
     return false;
 }
 
+bool matrix_is_on(uint8_t row, uint8_t col)
+{
+    return row < MATRIX_ROWS && col < MATRIX_COLS && (matrix_previous[col] & (matrix_col_t)(1u << row));
+}
+
 uint8_t matrix_task()
 {
     if (!matrix_updated) {

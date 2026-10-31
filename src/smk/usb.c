@@ -11,6 +11,7 @@
 #include "console.h"
 #include "keyboard.h"
 #include "delay.h"
+#include "timer.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -516,6 +517,7 @@ void usb_irq_dispatch(void)
 
     if (if1 & _SOFIF) {
         USBIF1 &= ~_SOFIF;
+        timer_sof();
         if (enum_quiet_ticks) {
             enum_quiet_ticks--;
         }
