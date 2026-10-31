@@ -47,7 +47,9 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 | Milestone | Stato | Note |
 | --- | --- | --- |
 | M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. M0.5 e M0.9 chiusi (G0 non superato). Dump verificato (M0.10 chiuso). Pronto: M0.4 (pinout connettore). M0.3 (acquisto Nano) ora **obbligatorio** prima del primo flash |
-| M1–M8 | non iniziate | |
+| M0 | **chiusa a metà** | Restano M0.3, M0.4, M0.6, M0.7: si chiudono all'arrivo del Nano |
+| M1 | **in corso** | M1.7 pronto (utente). M1.6 (analisi del firmware stock) la svolge Claude sul dump. M1.2–M1.5 attendono M0.4 |
+| M2–M8 | non iniziate | |
 
 Registro delle decisioni/rilievi emersi durante i task:
 

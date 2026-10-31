@@ -30,6 +30,8 @@ un branch/PR. Le schede le scrivo io; tu implementi; io faccio review e tengo ag
 | [M0.9](M0.9-gate-g0.md) | **Gate G0**: l'ISP funziona senza applicazione? | M0 | **Chiuso: non superato** | M |
 | [M0.10](M0.10-riletture-dump.md) | Riletture del dump e confronto | M0 | **Chiuso** | S |
 
+| [M1.7](M1.7-usb-stock.md) | Descrittori USB stock + preset sinowisp | M1 | **Pronto** | S |
+
 I task successivi li dettaglio uno alla volta quando chiudiamo quello precedente.
 
 ## Modello di scheda

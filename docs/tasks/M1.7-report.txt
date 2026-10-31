@@ -1,0 +1,16 @@
+M1.7 report — USB stock
+
+## lsusb -d 258a:010c -v
+
+
+## usbhid-dump
+
+
+## Nome mostrato / modalità
+
+
+## sinowisp -d yunzii-al66
+
+
+## sinowisp -d yunzii-al71
+
