@@ -1,0 +1,35 @@
+.\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c -s full full.hex
+.\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c firmware.hex
+.\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c -s bootloader bootloader.hex
+
+Per entrare in modalita' ISP ho utilizzato sinwisp che ha resettato la tastiera e portata in modalita' ISP, ha fatto il dump e resettata nuovamente.
+
+// Test ripetuti
+PS C:\Users\temporary\Downloads> .\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c -s full full.hex
+Looking for 258a:010c (isp_iface_num=1 isp_report_id=5)
+Connected!
+Enabling firmware...
+Reading...
+██████████████████████████████████████████████████████████████████████████████████████████████████████████████████ 32/32Rebooting...
+MD5: 4aea8bec8f13356a66a90788be58f179
+Successfully read 65536 bytes - full.hex
+
+
+PS C:\Users\temporary\Downloads> .\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c firmware.hex
+Looking for 258a:010c (isp_iface_num=1 isp_report_id=5)
+Connected!
+Enabling firmware...
+Reading...
+██████████████████████████████████████████████████████████████████████████████████████████████████████████████████ 30/30Rebooting...
+MD5: 6916b48f1e349d6bea74d71f0375814b
+Successfully read 61440 bytes - firmware.hex
+
+
+PS C:\Users\temporary\Downloads> .\sinowisp.exe read --platform sh68f90 --vendor_id 0x258a --product_id 0x010c -s bootloader bootloader.hex
+Looking for 258a:010c (isp_iface_num=1 isp_report_id=5)
+Connected!
+Enabling firmware...
+Reading...
+████████████████████████████████████████████████████████████████████████████████████████████████████████████████████ 2/2Rebooting...
+MD5: 3e0ebd0c440af5236d7ff8872343f85d
+Successfully read 4096 bytes - bootloader.hex

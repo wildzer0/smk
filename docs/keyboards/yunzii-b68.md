@@ -76,4 +76,17 @@ Code option e prova di ripristino: M0.6/M0.7 (ancora da fare).
 
 ## Gate G0 (M0.9)
 
-*Da compilare: la B68 entra in ISP senza applicazione? sì/no.*
+**Esito (Claude, 2026-10-31): NON superato — il Nano diventa obbligatorio prima del primo flash (R11).**
+
+* In ISP si entra **tramite l'applicazione stock**: `sinowisp` apre il dispositivo in esecuzione `258a:010c`
+  (interfaccia 1, feature report 5), la tastiera si resetta nel bootloader, si legge, si riavvia. Non è stato provato
+  nessun ingresso indipendente dall'app (tasto/ponticello a freddo), né sappiamo cosa fa il bootloader stock se
+  l'app è assente o non valida.
+* Quindi con un'app che non parte non c'è un percorso di recupero provato. Per sbloccare il primo flash serve l'ICP
+  (M0.3), oppure un test controllato futuro.
+* Preset da usare: `--platform sh68f90 --vendor_id 0x258a --product_id 0x010c` (isp_iface_num=1, isp_report_id=5 di
+  default, identici a SMK).
+
+**Anomalia dump:** nella rilettura di M0.9 l'MD5 del bootloader coincide con `bootloader.hex` (`3e0ebd0c…`), mentre
+quelli di `full` e `firmware` **no** (`4aea8bec…` vs `35638c0a…`; `6916b48f…` vs `c2e07b89…`). Probabile area dati
+modificata a runtime (il settore 0xD000 non ha nessun byte 0xFF). Da chiarire in M0.10.

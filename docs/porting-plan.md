@@ -46,11 +46,12 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 
 | Milestone | Stato | Note |
 | --- | --- | --- |
-| M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. M0.5 chiuso (dump `full` coerente con `firmware`+`bootloader`). Pronti: M0.4 (pinout connettore) e M0.9 (gate G0); poi M0.3 (acquisti) |
+| M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. M0.5 e M0.9 chiusi (G0 non superato). Pronti: M0.10 (riletture dump), M0.4 (pinout connettore). M0.3 (acquisto Nano) ora **obbligatorio** prima del primo flash |
 | M1–M8 | non iniziate | |
 
 Registro delle decisioni/rilievi emersi durante i task:
 
+* M0.9: **G0 non superato**: l'ISP stock si raggiunge solo tramite l'applicazione (258a:010c, iface 1, report 5). Nano/ICP obbligatorio prima del primo flash (R11). MD5 di `full`/`firmware` diverse fra le due letture ⇒ M0.10.
 * M0.5: reset vector stock = `LJMP 0x9A26` (applicazione); il bootloader è a 0xF000. Raccolta del report mancante; doppia lettura da confermare in M0.9.
 * M0.1: la suite `meson test` su build release ha 1 errore noto (`console_buf` esiste solo in debug); non è un difetto del firmware.
 
