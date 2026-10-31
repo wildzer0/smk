@@ -46,7 +46,7 @@ Aggiornato da Claude a ogni chiusura di task (ultimo aggiornamento: 2026-10-31).
 
 | Milestone | Stato | Note |
 | --- | --- | --- |
-| M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. Prossimi: M0.3 (acquisti), M0.4 (pad ICP), M0.5 (dump), M0.9 (gate G0) |
+| M0 Preparazione | **in corso** | M0.1 e M0.2 chiusi. In corso/pronti: M0.4 (pinout connettore, senza foto) e M0.5 (dump via ISP); poi M0.3 (acquisti), M0.9 (gate G0) |
 | M1–M8 | non iniziate | |
 
 Registro delle decisioni/rilievi emersi durante i task:
