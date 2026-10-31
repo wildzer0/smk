@@ -3,7 +3,9 @@
 #include "user_layout.h"
 #include "report.h"
 #include "host.h"
+#include "timer.h"
 #include "user_matrix.h"
+#include "delay.h"
 #include <stdint.h>
 
 // clang-format off
@@ -13,10 +15,10 @@
 // the keyboard focus. Open a text editor, press the keys in a known order, and the typed text
 // is the map from physical key to matrix cell.
 //
-// It also watches the inputs that are not part of the matrix and types a line whenever one of them
-// changes: "p70=0 " means P7.0 went low. Turn the encoder slowly and the lines that appear are its
-// contacts. "i05 " is the set of matrix rows (bit 0 = row 0) held low while no column is driven, i.e.
-// a contact wired straight to ground.
+// It also watches the input pins and types a line whenever one changes: "p70=0 " means P7.0 went low.
+// "e07=0 " means P7.0 is pulled low while column 7 is driven (an encoder wired as a matrix cell).
+// Leave the keyboard alone for the first 4 s after plugging it in (it learns which pins are noisy),
+// then turn the encoder slowly: the lines that appear are its contacts. See kb_update() below.
 //
 // Build: meson compile -C <build> yunzii-b68_probe_smk.hex
 
@@ -53,82 +55,157 @@ static void tap_digit(uint8_t digit)
     tap(digit == 0 ? KC_0 : (uint8_t)(KC_1 + digit - 1));
 }
 
-// Inputs worth watching: P7.0 (read by the stock firmware next to the rows, function unknown) and the
-// other pulled-up inputs it leaves alone. P0.5-P0.7 are left out: they are the radio's lines on
-// the Air60 and would flood the output.
-typedef struct {
-    uint8_t port; // 0, 4 or 7
-    uint8_t bit;
-} watched_pin_t;
+// The monitor watches every pin the stock firmware configures as an input (PxCR bit clear), except
+// the USB data pins (P0.0 and P0.1), which move with every packet. For the first few seconds after
+// power-up it only learns which of them move by themselves (the radio's lines, say); keep your hands
+// off the keyboard in that time. After that, a change on any other pin is typed as "pPB=L " (port P,
+// bit B, new level L). The rows are read from the main loop, where no column is being driven, so
+// pressing keys does not move them.
+#define LEARN_MS 4000u
+#define MAX_EVENTS 60u
 
-static const __code watched_pin_t watched[] = { { 7, 0 }, { 7, 7 }, { 4, 6 }, { 0, 3 }, { 0, 4 } };
-
-#define WATCHED_COUNT (sizeof(watched) / sizeof(watched[0]))
-
-static uint8_t pin_level(uint8_t port, uint8_t bit)
+static uint8_t read_port(uint8_t port)
 {
-    uint8_t value = 0;
-
     switch (port) {
         case 0:
-            value = P0;
-            break;
+            return P0;
+        case 1:
+            return P1;
+        case 2:
+            return P2;
+        case 3:
+            return P3;
         case 4:
-            value = P4;
-            break;
+            return P4;
+        case 5:
+            return P5;
+        case 6:
+            return P6;
         default:
-            value = P7;
-            break;
+            return P7;
+    }
+}
+
+static uint8_t read_direction(uint8_t port)
+{
+    switch (port) {
+        case 0:
+            return P0CR;
+        case 1:
+            return P1CR;
+        case 2:
+            return P2CR;
+        case 3:
+            return P3CR;
+        case 4:
+            return P4CR;
+        case 5:
+            return P5CR;
+        case 6:
+            return P6CR;
+        default:
+            return P7CR;
+    }
+}
+
+// P7.0 is a sixth sense line the stock firmware reads next to the five matrix rows. If the encoder
+// sits on it as extra matrix cells (one per direction), they only show while their column is driven.
+// So drive each column in turn and keep the ones that pull P7.0 low. Interrupts are off meanwhile so
+// the matrix scan cannot drive a column at the same time.
+static uint16_t read_row5(void)
+{
+    uint16_t cells = 0;
+
+    __critical
+    {
+        user_matrix_cols_deselect_all();
+        for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+            user_matrix_col_select(col);
+            delay_us(10);
+            if (!(P7 & 0x01u)) {
+                cells |= (uint16_t)(1u << col);
+            }
+            user_matrix_col_deselect(col);
+        }
     }
 
-    return (value >> bit) & 1u;
+    return cells;
 }
 
 void kb_update(void)
 {
-    static uint8_t levels[WATCHED_COUNT];
-    static uint8_t idle_rows;
-    static bool    primed;
+    static uint16_t last_cells;
+    static uint16_t noisy_cells;
+    static uint8_t  last[8];
+    static uint8_t  noisy[8];
+    static uint16_t started;
+    static uint8_t  events;
+    static bool     primed;
 
-    uint8_t now[WATCHED_COUNT];
-    uint8_t rows;
-
-    // no ISR may move a column while the pins are read
-    __critical
-    {
-        for (uint8_t i = 0; i < WATCHED_COUNT; i++) {
-            now[i] = pin_level(watched[i].port, watched[i].bit);
-        }
-        rows = (uint8_t)(~user_matrix_read_rows() & 0x1Fu);
-    }
+    const uint16_t cells = read_row5();
 
     if (!primed) {
-        for (uint8_t i = 0; i < WATCHED_COUNT; i++) {
-            levels[i] = now[i];
+        last_cells = cells;
+        for (uint8_t port = 0; port < 8; port++) {
+            last[port] = read_port(port);
         }
-        idle_rows = rows;
-        primed    = true;
+        started = timer_read();
+        primed  = true;
         return;
     }
 
-    for (uint8_t i = 0; i < WATCHED_COUNT; i++) {
-        if (now[i] != levels[i]) {
-            levels[i] = now[i];
-            tap(KC_P);
-            tap_digit(watched[i].port);
-            tap_digit(watched[i].bit);
-            tap(KC_EQUAL);
-            tap_digit(now[i]);
-            tap(KC_SPACE);
+    const bool learning = timer_elapsed(started) < LEARN_MS;
+
+    for (uint8_t port = 0; port < 8; port++) {
+        uint8_t watch = (uint8_t)~read_direction(port); // inputs only
+        if (port == 0) {
+            watch &= (uint8_t)~0x03u; // USB D+ / D-
+        }
+
+        const uint8_t value   = read_port(port);
+        const uint8_t changed = (uint8_t)((value ^ last[port]) & watch);
+
+        last[port] = value;
+
+        if (learning) {
+            noisy[port] |= changed;
+            continue;
+        }
+
+        for (uint8_t bit = 0; bit < 8; bit++) {
+            if ((changed & (uint8_t)~noisy[port]) & (uint8_t)(1u << bit)) {
+                if (events < MAX_EVENTS) {
+                    events++;
+                    tap(KC_P);
+                    tap_digit(port);
+                    tap_digit(bit);
+                    tap(KC_EQUAL);
+                    tap_digit((value >> bit) & 1u);
+                    tap(KC_SPACE);
+                }
+            }
         }
     }
 
-    if (rows != idle_rows) {
-        idle_rows = rows;
-        tap(KC_I);
-        tap_digit(rows / 10);
-        tap_digit(rows % 10);
-        tap(KC_SPACE);
+    const uint16_t cell_changes = cells ^ last_cells;
+    last_cells                  = cells;
+
+    if (learning) {
+        noisy_cells |= cell_changes;
+    } else {
+        for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+            if ((cell_changes & (uint16_t)~noisy_cells) & (uint16_t)(1u << col)) {
+                if (events < MAX_EVENTS) {
+                    events++;
+                    tap(KC_E);
+                    tap_digit(col / 10);
+                    tap_digit(col % 10);
+                    tap(KC_EQUAL);
+                    tap_digit(((cells >> col) & 1u) ? 0 : 1); // 0 = P7.0 pulled low
+                    tap(KC_SPACE);
+                }
+            }
+        }
     }
 }
 

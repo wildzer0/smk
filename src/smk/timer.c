@@ -9,7 +9,7 @@
 
 #define SOF_WINDOW 256u // SOFs per measurement: 256 ms
 
-static volatile uint32_t now_ms;
+volatile uint32_t timer_now_ms; // not static so a simulator test can move the clock
 static uint16_t          sweep_us = SWEEP_US_DEFAULT;
 static uint16_t          carry_us; // microseconds counted but not yet worth a millisecond
 
@@ -30,7 +30,7 @@ void timer_sweep(void)
     carry_us += sweep_us;
     while (carry_us >= 1000u) {
         carry_us -= 1000u;
-        now_ms++;
+        timer_now_ms++;
     }
 }
 
@@ -88,8 +88,8 @@ uint32_t timer_read32(void)
 
     // 32 bits are not read atomically: take two readings until they agree
     do {
-        a = now_ms;
-        b = now_ms;
+        a = timer_now_ms;
+        b = timer_now_ms;
     } while (a != b);
 
     return a;
